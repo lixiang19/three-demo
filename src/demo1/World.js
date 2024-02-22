@@ -16,6 +16,7 @@ import { MeshShow } from './action/MeshShow.js'
 import { Dot } from './action/dot.js'
 import { createPointAni } from './ani/pointAni.js'
 // https://github.com/Mamboleoo/SurfaceSampling
+// https://www.shutterstock.com/zh/video/search/similar/1058269939
 let loop;
 let camera;
 let renderer;
