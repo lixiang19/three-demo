@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-
+import * as THREE from 'three';
 class MeshShow {
   constructor(model, camera) {
     this.model = model;
@@ -8,26 +8,25 @@ class MeshShow {
   aniCamera() {
     gsap.to(this.camera.position, {
       duration: 2, // 动画持续时间，单位为秒
-      x: 3,
-      y: 1,
-      z: 1,
+      x: 30,
+      y: 0,
+      z: -80,
       ease: "power1.out", // 缓动函数，可以根据需求选择不同的效果
     });
   }
   toggleMain() {
     this.model.traverse((object) => {
       if (object.isMesh) {
-        object.material.transparent = true;
-        object.material.opacity = 0.5;
-        object.visible = true
+        object.material.opacity = 0.3;
+        object.material.color = new THREE.Color(0x469cf8);
       }
     });
     document.querySelector('.detail').style.display = 'none';
     gsap.to(this.camera.position, {
       duration: 1, // 动画持续时间，单位为秒
-      x: 1,
-      y: 3,
-      z: 1,
+      x: 70,
+      y: 10,
+      z: 40,
       ease: "power1.out", // 缓动函数，可以根据需求选择不同的效果
     });
   }
@@ -35,13 +34,11 @@ class MeshShow {
   toggle() {
     this.model.traverse((object) => {
       if (object.isMesh) {
-        object.material.transparent = true;
-        if (object.name === 'Brain_Part_06_Colour_Brain_Texture_0') {
+
+        if (object.name === 'frontal_01_-_Default_0') {
           object.material.opacity = 0.5;
-          object.visible = true
-        } else {
-          object.material.opacity = 0.5;
-          object.visible = false
+          object.material.color = new THREE.Color(0x00ff00);
+
         }
 
       }

@@ -35,7 +35,7 @@ function createTube(curve) {
   const uniforms = {
     time: { value: 0 },
     color: { value: new THREE.Color("rgb(255, 255, 255)") },
-    bgColor: { value: new THREE.Color("rgb(159, 213, 255)") },
+    bgColor: { value: new THREE.Color("rgb(136, 243, 236)") },// 159, 213, 255 
   };
   const shaderMaterial = new THREE.ShaderMaterial({
     uniforms,
@@ -44,7 +44,7 @@ function createTube(curve) {
     side: THREE.DoubleSide,
     transparent: true,
   });
-  const tube = new THREE.TubeGeometry(curve, 64, 0.004, 8, false);
+  const tube = new THREE.TubeGeometry(curve, 64, 0.1, 8, false);
   const mesh = new THREE.Mesh(tube, shaderMaterial);
   return mesh
 }
@@ -103,7 +103,6 @@ class DrawCurve {
       const intersects = raycaster.intersectObject(this.model, true);
       if (intersects.length > 0) {
         const point = intersects[0].point;
-        // closestVertex = this.findClosestVertex(point);
 
         points.add(point);
 
@@ -115,21 +114,7 @@ class DrawCurve {
 
     }
   }
-  findClosestVertex(point) {
 
-    let minDist = Infinity;
-    let closestVertex = null;
-
-    for (let vertex of this.vertices) {
-      const dist = vertex.distanceTo(point);
-      if (dist < minDist) {
-        minDist = dist;
-        closestVertex = vertex;
-      }
-    }
-
-    return closestVertex;
-  }
   onMouseDown(event) {
     if (!this.isDrawMode) return; // 如果不是绘制模式，不执行任何操作
 
@@ -145,14 +130,14 @@ class DrawCurve {
       this.curveObject = null;
     }
     points.clear();
-    if (this.praticeObject) {
-      this.scene.remove(this.praticeObject.pratice);
-    }
-    const point = new Points(this.curves);
-    point.init()
-    const pratice = point.createParticles();
-    this.praticeObject = point;
-    this.scene.add(pratice);
+    // if (this.praticeObject) {
+    //   this.scene.remove(this.praticeObject.pratice);
+    // }
+    // const point = new Points(this.curves);
+    // point.init()
+    // const pratice = point.createParticles();
+    // this.praticeObject = point;
+    // this.scene.add(pratice);
   }
   startListen() {
     window.addEventListener('mousemove', this.onMouseMove.bind(this), false);

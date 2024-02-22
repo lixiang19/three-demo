@@ -2,9 +2,9 @@ import { PointLight, AmbientLight } from 'three';
 
 function createLights() {
 
-  const ambientLight = new AmbientLight('white', 2);
-  const mainLight = new PointLight('white', 0.6, 0);
-  mainLight.position.set(0, 0.1, 0);
+  const ambientLight = new AmbientLight('white', 4);
+  const mainLight = new PointLight('white', 30, 0);
+  mainLight.position.set(10, 0, 0);
   return { ambientLight, mainLight };
 }
 

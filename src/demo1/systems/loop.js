@@ -25,10 +25,11 @@ class Loop {
     this.renderer.setAnimationLoop(null);
   }
   tick() {
-    const delta = clock.getDelta();
 
+    const delta = clock.getDelta();
+    const elapsedTime = clock.getElapsedTime();
     for (const object of this.updatables) {
-      object.tick(delta);
+      object.tick(delta, elapsedTime);
     }
   }
 }

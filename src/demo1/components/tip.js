@@ -19,7 +19,7 @@ function transPos(mesh) {
       // 从几何体的position属性中获取顶点数据
       const positionAttribute = geometry.attributes.position;
       // 获取第一个顶点的坐标
-      vertex.fromBufferAttribute(positionAttribute, 100);
+      vertex.fromBufferAttribute(positionAttribute, 12000);
     } else if (geometry instanceof THREE.Geometry) {
       // 如果是旧版的Geometry，直接从vertices数组中获取
       vertex = geometry.vertices[0];
