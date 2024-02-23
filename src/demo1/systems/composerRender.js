@@ -10,8 +10,12 @@ export function createComposer(renderer, scene, camera) {
   composer.addPass(renderPass);
   // 创建UnrealBloomPass
   const bloomPass = new UnrealBloomPass(
-    undefined, 1, 1, 1
+    undefined,
+    1.5, // 强度
+    0.4, // 半径
+    0.85 // 阈值
   );
   composer.addPass(bloomPass);
+  composer.setPixelRatio(2);
   return composer;
 }

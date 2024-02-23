@@ -1,7 +1,7 @@
-import { createCamera, animateCamera } from './components/camera.js';
+import { createCamera, animateCamera, aniCameraSparkle } from './components/camera.js';
 import { createCube } from './components/cube.js';
 import { createScene } from './components/scene.js';
-import { createLights } from './components/lights.js';
+import { createBaseLight, createInnerPointLight, createSparkleLights } from './components/lights.js';
 import { createRenderer } from './systems/renderer.js';
 import { posTip } from './components/tip.js'
 import { Resizer } from './systems/Resizer.js';
@@ -15,6 +15,9 @@ import { createBrain } from './components/brain.js'
 import { MeshShow } from './action/MeshShow.js'
 import { Dot } from './action/dot.js'
 import { createPointAni } from './ani/pointAni.js'
+import sparkAnimation from './ani/sparkle.js'
+import lineAnimation from './ani/line.js'
+import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
 // https://github.com/Mamboleoo/SurfaceSampling
 // https://www.shutterstock.com/zh/video/search/similar/1058269939
 let loop;
@@ -27,48 +30,59 @@ let drawCurve
 let drawDot
 let labelRender
 let meshShow
+let brain
 class World {
   // 1. Create an instance of the World app
   constructor(container) {
     camera = createCamera();
     scene = createScene();
     renderer = createRenderer();
-
     container.append(renderer.domElement);
     const resizer = new Resizer(container, camera, renderer);
-
-
     composer = createComposer(renderer, scene, camera);
     loop = new Loop(camera, scene, renderer, composer);
-
-    const { ambientLight, mainLight } = createLights();
-
+    const ambientLight = createBaseLight();
     controls = createControls(camera, renderer.domElement);
-    scene.add(ambientLight, mainLight);
+    scene.add(ambientLight);
     loop.updatables.push(controls);
 
   }
   async init() {
-    const { brain, brainData } = await createBrain();
-
+    const { brainModel, brainData } = await createBrain();
+    const { innerLight } = createInnerPointLight();
+    scene.add(innerLight);
+    brain = brainModel;
     scene.add(brain);
     meshShow = new MeshShow(brain, camera);
 
-    const mesh6 = brain.getObjectByName('frontal_01_-_Default_0')
+
+
 
     // loop.updatables.push(tip);
     drawCurve = new DrawCurve(scene, camera, brain, controls);
     drawDot = new Dot(scene, camera, brain, controls);
     loop.updatables.push(drawCurve);
     loop.updatables.push(drawDot);
+    const frontalMesh = brain.getObjectByName('frontal_01_-_Default_0')
     loop.updatables.push({
       tick() {
-        posTip(mesh6, camera)
+        posTip(frontalMesh, camera)
       }
-    });
+    })
+  }
+  async aniSparkInit() {
+    const group = await sparkAnimation.createSparkle()
+    scene.add(group);
+    aniCameraSparkle(camera)
+    loop.updatables.push(sparkAnimation);
+  }
+  async aniLineInit() {
 
-    // const pointAniGroup = createPointAni(brain);
-    // scene.add(pointAniGroup);
+    const group = await lineAnimation.createLine()
+    // 创建个正方形
+    scene.add(group);
+    aniCameraSparkle(camera)
+    // loop.updatables.push(lineAnimation);
   }
   // 2. Render the scene
   render() {
@@ -79,7 +93,17 @@ class World {
     setTimeout(() => {
       animateCamera(camera);
       this.addAction();
+      this.addAniAction()
     }, 300)
+  }
+  addAniAction() {
+    const btn = document.getElementById('btn_ani_sparkle');
+    btn.addEventListener('click', () => {
+      // 先把老的brain删除了
+      scene.remove(brain);
+      loop.updatables = []
+      this.aniSparkInit()
+    })
   }
   addAction() {
     const toggleDrawButton = document.getElementById('btn_draw');

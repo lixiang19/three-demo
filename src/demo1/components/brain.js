@@ -1,20 +1,19 @@
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import brainGltf from "../assets/model/brain.glb?url";
+
 import BrainModel from '../assets/model/brain3.glb?url';
-import * as THREE from 'three';
+import * as THREE from 'three'; // brain3
 
 import { setupModel } from './setupModel.js';
-
 
 async function createBrain() {
   const loader = new GLTFLoader();
   const loadedData = await loader.loadAsync(BrainModel);
+  console.log("🚀 ~ createBrain ~ loadedData:", loadedData)
 
-  const brain = setupModel(loadedData);
-  console.log("🚀 ~ createBrain ~ brain:", brain)
+  const brainModel = setupModel(loadedData);
 
-  brain.position.set(-10, -10, 0);
+  brainModel.position.set(-10, -10, 0);
 
-  return { brain, brainData: loadedData };
+  return { brainModel, brainData: loadedData };
 }
 export { createBrain };

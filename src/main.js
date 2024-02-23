@@ -9,7 +9,7 @@ async function main() {
 
   // 2. Render the scene
   world.start()
-  await world.init();
+  await world.aniSparkInit();
 }
 
 // call main to start the app

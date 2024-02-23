@@ -26,5 +26,14 @@ function animateCamera(camera) {
     ease: "power1.out", // 缓动函数，可以根据需求选择不同的效果
   });
 }
-
-export { createCamera, animateCamera };
+function aniCameraSparkle(camera) {
+  // 使用GSAP动画镜头位置
+  gsap.to(camera.position, {
+    duration: 2, // 动画持续时间，单位为秒
+    x: -22,
+    y: 2,
+    z: 12,
+    ease: "power1.out", // 缓动函数，可以根据需求选择不同的效果
+  });
+}
+export { createCamera, animateCamera, aniCameraSparkle };
