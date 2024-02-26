@@ -82,7 +82,7 @@ class World {
     // 创建个正方形
     scene.add(group);
     aniCameraSparkle(camera)
-    // loop.updatables.push(lineAnimation);
+    loop.updatables.push(lineAnimation);
   }
   // 2. Render the scene
   render() {

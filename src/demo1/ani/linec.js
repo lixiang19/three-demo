@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import BrainModel from '../assets/model/brainAll.glb?url';
 import dotTexture from '../assets/textures/dotTexture.png?url';
-
+import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler.js';
 import polyVe from '../data/polyVe.json'
 const pixelRatio = 2
 const group = new THREE.Group();
@@ -59,8 +59,10 @@ let galaxyColors = [
   new THREE.Color("#0597f2").multiplyScalar(0.8),
   new THREE.Color("#0476d9").multiplyScalar(0.8)
 ];
-function dots() {
-  for (let i = 0; i < 2; i++) {
+function dots(model) {
+  sampler = new MeshSurfaceSampler(model).build();
+
+  for (let i = 0; i < 12; i++) {
     const linesMesh = new THREE.Line(new THREE.BufferGeometry(), linesMaterials[i % 2]);
     linesMesh.coordinates = [];
     linesMesh.previous = null;
@@ -93,45 +95,19 @@ async function createBrain() {
   return { model, brainData: loadedData };
 }
 async function createLine() {
-  // const { model, brainData } = await createBrain();
+  const { model, brainData } = await createBrain();
 
-  dots();
+  dots(model);
   return group;
 
 }
-function createUniqueValueGetter(arr) {
-  console.log("🚀 ~ createUniqueValueGetter ~ arr:", arr)
-  let values = Array.from(arr); // 复制数组以避免修改原始数据
-  const usedIndices = new Set(); // 用于存储已返回值的索引
 
-  return function() {
-    // 查找尚未返回的值的索引
-    let index = values.findIndex((_, i) => !usedIndices.has(i));
-
-    if (index !== -1) {
-      usedIndices.add(index);
-      return values[index];
-    } else {
-      return null; // 如果所有值都已被返回，则返回null
-    }
-  };
-}
-const getNextUniqueValue = createUniqueValueGetter(polyVePoints);
-
-let p1 = new THREE.Vector3();
+const p1 = new THREE.Vector3();
 function nextDot(line) {
   let ok = false;
   while (!ok) {
-    p1 = getNextUniqueValue();
-    if (!p1) {
-      return
-    }
-    if (line.previous) {
-      console.log("🚀 ~ nextDot ~ p1", p1,line.previous,p1.distanceTo(line.previous))
-    }
-   
-    if (line.previous && p1.distanceTo(line.previous) < 100) {
-      
+    sampler.sample(p1);
+    if (line.previous && p1.distanceTo(line.previous) < 0.3) {
       line.coordinates.push(p1.x, p1.y, p1.z);
       line.previous = p1.clone();
 
@@ -191,15 +167,17 @@ class Sparkle extends THREE.Vector3 {
 let _prev = 0;
 function tick(delta, elapsedTime) {
 
-  // group.rotation.x = Math.sin(elapsedTime * 0.0003) * 0.1;
-  // group.rotation.y += 0.001;
+  group.rotation.x = Math.sin(elapsedTime * 0.0003) * 0.1;
+  group.rotation.y += 0.001;
 
-  if (elapsedTime - _prev > 0.01) {
+  if (elapsedTime - _prev > 0.03) {
 
     lines.forEach((l) => {
       if (sparkles.length < 35000) {
         nextDot(l);
-      
+        nextDot(l);
+        nextDot(l);
+        nextDot(l);
       }
       const tempVertices = new Float32Array(l.coordinates);
       l.geometry.setAttribute("position", new THREE.BufferAttribute(tempVertices, 3));
