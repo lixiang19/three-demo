@@ -21,6 +21,7 @@ class Dot {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, this.camera);
     const intersects = raycaster.intersectObject(this.model, true);
+    console.log("🚀 ~ Dot ~ setDot ~ intersects:", intersects)
     if (intersects.length > 0) {
       const point = intersects[0].point;
       console.log('点位是', point)

@@ -45,8 +45,6 @@ const sparklesMaterial = new THREE.ShaderMaterial({
 });
 const points = new THREE.Points(sparklesGeometry, sparklesMaterial);
 group.add(points);
-
-let sampler = null;
 const lines = [];
 let linesMaterials = [
   new THREE.LineBasicMaterial({ transparent: true, color: 0x125D98 }),
@@ -59,68 +57,82 @@ let galaxyColors = [
   new THREE.Color("#0597f2").multiplyScalar(0.8),
   new THREE.Color("#0476d9").multiplyScalar(0.8)
 ];
-function dots(model) {
-  sampler = new MeshSurfaceSampler(model).build();
-
-  for (let i = 0; i < 12; i++) {
+function dots() {
+  for (let i = 0; i < 2; i++) {
     const linesMesh = new THREE.Line(new THREE.BufferGeometry(), linesMaterials[i % 2]);
     linesMesh.coordinates = [];
     linesMesh.previous = null;
     lines.push(linesMesh);
     group.add(linesMesh);
   }
-  console.log(group)
 }
 function setupModel(loadedData) {
-  console.log("🚀 ~ setupModel ~ loadedData:", loadedData)
-  const model = loadedData.scene.children[0];
 
+  const model = loadedData.scene.children[0];
   let meshModel = null
   model.traverse((object) => {
-
     if (object.isMesh) {
       meshModel = object;
     }
   });
-  console.log("🚀 ~ model.traverse ~ object:", meshModel)
-  // meshModel.geometry.scale(0.3, 0.3, 0.3);
-  // meshModel.geometry.translate(0, -2, 0);
-  // meshModel.geometry.rotateY(0.2);
+
   return meshModel;
 }
+let vertices = [];
 async function createBrain() {
   const loader = new GLTFLoader();
   const loadedData = await loader.loadAsync(BrainModel);
   const model = setupModel(loadedData);
   return { model, brainData: loadedData };
 }
+function calcVertices(model) {
+  const geometry = model.geometry
+
+  // 检查几何体是否使用了索引
+  if (geometry.index) {
+    const indices = geometry.index.array;
+
+    for (let i = 0; i < indices.length; i += 3) {
+      const a = indices[i];
+      const b = indices[i + 1];
+      const c = indices[i + 2];
+
+      const vA = new THREE.Vector3();
+      const vB = new THREE.Vector3();
+      const vC = new THREE.Vector3();
+
+      vA.fromBufferAttribute(geometry.attributes.position, a);
+      vB.fromBufferAttribute(geometry.attributes.position, b);
+      vC.fromBufferAttribute(geometry.attributes.position, c);
+
+      vertices.push(vA, vB, vC);
+    }
+  }
+
+
+
+}
 async function createLine() {
   const { model, brainData } = await createBrain();
-
-  dots(model);
+  calcVertices(model);
+  dots();
   return group;
-
 }
 
 const p1 = new THREE.Vector3();
+let currentIndex = 0;
 function nextDot(line) {
-  let ok = false;
-  while (!ok) {
-    sampler.sample(p1);
-    if (line.previous && p1.distanceTo(line.previous) < 0.3) {
-      line.coordinates.push(p1.x, p1.y, p1.z);
-      line.previous = p1.clone();
-
-      for (let i = 0; i < 2; i++) {
-        const spark = new Sparkle();
-        spark.setup(p1, line.material.color);
-        sparkles.push(spark);
-      }
-      ok = true;
-    } else if (!line.previous) {
-      line.previous = p1.clone();
-    }
+  // 取索引的下一个点
+  const p = vertices[currentIndex];
+  currentIndex++;
+  line.coordinates.push(p.x, p.y, p.z);
+  line.previous = p.clone();
+  for (let i = 0; i < 2; i++) {
+    const spark = new Sparkle();
+    spark.setup(p, line.material.color);
+    sparkles.push(spark);
   }
+
 }
 
 function updateSparklesGeometry() {
@@ -170,11 +182,10 @@ function tick(delta, elapsedTime) {
   group.rotation.x = Math.sin(elapsedTime * 0.0003) * 0.1;
   group.rotation.y += 0.001;
 
-  if (elapsedTime - _prev > 0.03) {
+  if (elapsedTime - _prev > 0.001) {
 
     lines.forEach((l) => {
       if (sparkles.length < 35000) {
-        nextDot(l);
         nextDot(l);
         nextDot(l);
         nextDot(l);

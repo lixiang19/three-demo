@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lume/three-meshline": "^4.0.5",
     "gsap": "^3.12.5",
     "three": "^0.160.1"
   },
