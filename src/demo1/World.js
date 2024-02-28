@@ -1,4 +1,4 @@
-import { createCamera, animateCamera, aniCameraSparkle } from './components/camera.js';
+import { createCamera, animateCamera, aniCameraLine, aniCameraSparkle } from './components/camera.js';
 import { createCube } from './components/cube.js';
 import { createScene } from './components/scene.js';
 import { createBaseLight, createInnerPointLight, createSparkleLights } from './components/lights.js';
@@ -54,7 +54,7 @@ class World {
     brain = brainModel;
     scene.add(brain);
     meshShow = new MeshShow(brain, camera);
-
+    animateCamera(camera);
 
 
 
@@ -78,10 +78,11 @@ class World {
   }
   async aniLineInit() {
 
-    const group = await lineAnimation.createLine()
+    const group = await lineAnimation.createLineAni()
     // 创建个正方形
     scene.add(group);
-    aniCameraSparkle(camera)
+    scene.background = new THREE.Color(0x0e2049);
+    aniCameraLine(camera)
     loop.updatables.push(lineAnimation);
   }
   // 2. Render the scene
@@ -91,7 +92,7 @@ class World {
   start() {
     loop.start();
     setTimeout(() => {
-      animateCamera(camera);
+
       this.addAction();
       this.addAniAction()
     }, 300)
