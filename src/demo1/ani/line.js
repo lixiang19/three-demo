@@ -15,10 +15,33 @@ let pointLineMap = {}
 const allLineList = []
 let shaderMaterial = null
 // const polyVePoints = polyVe.map(p => new THREE.Vector3(p[0], p[2], -p[1]))
+// 函数：生成两数之间的随机数，可以为负数
+function randomBetween(min, max) {
+  return Math.random() * (max - min) + min;
+}
+function getRandomElementsFromArray(arr, proportion) {
+  // 确保比例是在0到1之间
+  if (proportion < 0) proportion = 0;
+  if (proportion > 1) proportion = 1;
 
-// 将polyVePoints剔除 30%
-const polyVePoints = polyVe.map(p => new THREE.Vector3(p[0], p[2], -p[1])).filter((p, i) => i % 2 === 0)
+  // 计算要返回的元素数量
+  const count = Math.round(arr.length * proportion);
 
+  // 创建一个数组副本，以便随机选择元素时不修改原数组
+  const arrCopy = [...arr];
+
+  // 随机选择元素
+  const selectedElements = [];
+  for (let i = 0; i < count; i++) {
+    const randomIndex = Math.floor(Math.random() * arrCopy.length);
+    selectedElements.push(arrCopy.splice(randomIndex, 1)[0]);
+  }
+
+  return selectedElements;
+}
+// 将polyVePoints剔除 30% .filter((p, i) => i % 2 === 0)
+let polyVePoints = polyVe.map(p => new THREE.Vector3(p[0], p[2], -p[1]))
+polyVePoints = getRandomElementsFromArray(polyVePoints, 0.6)
 function setupModel(loadedData) {
   const model = loadedData.scene.children[0];
   let meshModel = null
@@ -39,10 +62,11 @@ async function createLineAni() {
   const { model, brainData } = await createBrain();
   console.log("🚀 ~ createLine ~ model:", model)
 
-  createPoints(model);
+  // createPoints(model);
 
-  // createModel(model);
+  createModel(model);
   createLineTest()
+  createCure()
   group.position.set(0, -100, 0);
   return group;
 }
@@ -53,63 +77,34 @@ function createModel(model) {
     color: 0x4062b7,
     // 透明
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.02,
+
+
+    // 顶点着色器
+
   });
 
-  let material2 = new THREE.MeshBasicMaterial({
 
-    // 透明
-    transparent: true,
-    opacity: 0,
-  });
 
-  let materials = [shaderMaterial, material2];
-  // 顶点总数量
-  console.log("🚀 ~ createModel ~ model.geometry.attributes.position.count", model.geometry.attributes.position.count)
-  model.geometry.addGroup(0, 2000, 0)
-  model.geometry.addGroup(2000, model.geometry.attributes.position.count, 1)
-  let mesh = new THREE.Mesh(model.geometry, materials);
+  let mesh = new THREE.Mesh(model.geometry, shaderMaterial);
   group.add(mesh);
+
+}
+// 生成一些曲线
+function createCure() {
+  // const curve = new THREE.CatmullRomCurve3([polyVePoints[0], polyVePoints[100], polyVePoints[200]]);
+  // const points = curve.getPoints(100);
+  // const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  // const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+  // const curveObject = new THREE.Line(geometry, material);
+  // group.add(curveObject);
 
 }
 // 测试线条
 function createLineTest() {
   const range = 30;
-  const vertexShader = `
-  uniform float time;
-  uniform vec3 waveDir; // 波动方向
-  
-  void main() {
-      vec3 pos = position;
-  
-      if (waveDir.x > 0.5) {
-          pos.x += sin(pos.y*10.0+time)+ 2.0;
-      }
-      if (waveDir.y > 0.5) {
-          pos.y += sin(pos.x*4.0+time)+ 2.0;
-      }
-      if (waveDir.z > 0.5) {
-          pos.z += cos(time) * 0.0;
-      }
-      
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }`; // pos.x * 2.0 +
-
-  const fragmentShader = `
-  uniform bool isWhite; // 控制变量
-  void main() {
-    vec3 color;
-    float alpha;
-    if (isWhite) {
-      color = vec3(1.0); // 白色
-      alpha = 1.0; // 不透明
-    } else {
-      color = vec3(0.0, 0.0, 0.5); // 蓝色
-      alpha = 0.5; // 半透明
-    }
-    gl_FragColor = vec4(color, alpha);
-  }
-`;
+  const nearList = []
+  // polyVePoints = [polyVePoints[0], polyVePoints[100], polyVePoints[200]]
   polyVePoints.forEach((point, index) => {
     pointLineMap[index] = {}
     // 遍历剩余的点
@@ -117,34 +112,31 @@ function createLineTest() {
       const otherPoint = polyVePoints[i];
       // 计算距离
       const distance = point.distanceTo(otherPoint);
+      // const distance = 1
       // 如果距离在特定范围内，则创建线段
       if (distance <= range) {
 
-        // 创建线段并添加到组中
-        // const curve = new THREE.CatmullRomCurve3(Array.from([point, otherPoint]));
-        // const tube = new THREE.TubeGeometry(curve, 64, 0.1, 8, false);
-        // const mesh = new THREE.Mesh(tube, shaderMaterial);
 
-        // 随机改变waveDir
         const waveDir = randomArray(
           [new THREE.Vector3(1.0, 0.0, 0.0),
           new THREE.Vector3(0.0, 1.0, 0.0),
           new THREE.Vector3(0.0, 0.0, 1.0),
-          new THREE.Vector3(0.0, 0.0, 0.0),]
+          new THREE.Vector3(0.0, 1.0, 1.0),
+          new THREE.Vector3(0.0, 0.0, 0.0),
+          ]
         )
-        const uniforms = {
-          time: { value: 0.0 },
-          waveDir: { value: waveDir },
-          isWhite: { value: false } // 初始状态为蓝色
-        };
-        const newshaderMaterial = new THREE.ShaderMaterial({
-          uniforms,
-          vertexShader,
-          fragmentShader,
-          side: THREE.DoubleSide,
-          transparent: true,
+        let isWhite = false
+        if (index < 5) {
+          isWhite = true
+          nearList.push(i)
 
-        });
+        }
+        if (nearList.includes(index)) {
+          isWhite = true
+        }
+
+        const randShow = 1
+
         let matLine = new LineMaterial({
           transparent: true,
           color: 0x4e7bdf,
@@ -152,38 +144,68 @@ function createLineTest() {
           opacity: 0.1,
           alphaToCoverage: true,
           onBeforeCompile: shader => {
+            shader.uniforms.indexShow = { value: index };
+            shader.uniforms.time = { value: 0 };
+            shader.uniforms.isWhite = { value: isWhite };
+            shader.uniforms.waveDir = { value: waveDir };
+            shader.uniforms.randShow = { value: randShow };
+            shader.uniforms.lineColor = { value: new THREE.Color(0x4887e0) };
+            shader.fragmentShader = `
+            uniform bool isWhite; // 控制变量
+            uniform float time;
+            uniform float randShow;
+            uniform vec3 lineColor;
+            ${shader.fragmentShader}
+            `.replace(
+              `vec4 diffuseColor = vec4( diffuse, alpha );`,
+              `vec4 diffuseColor = vec4( diffuse, alpha );
+              if (isWhite) {
+                // 使用正弦函数和时间创建一个周期性变化
+                float factor = sin(time * 1.0); // 3.14159是π的近似值，用于转换为弧度
+                if (factor > randShow) {
+                  diffuseColor = vec4(1.0, 1.0, 1.0, 1.0); // 白色
+                }
+                
+            }`
+            )
+              .replace(
+                `gl_FragColor = vec4( diffuseColor.rgb, alpha );`,
+                `
+                if (isWhite) {
+                  gl_FragColor = vec4(diffuseColor.rgb, 0.2);
+                }else {
+                  gl_FragColor = vec4(diffuseColor.rgb, alpha);
+                }
 
-            shader.uniforms.time = { value: 1.0 };
-            shader.vertexShader = 'uniform float time;\n' + shader.vertexShader;
-            // shader.uniforms.waveDir = { value: new THREE.Vector3(1, 0, 0) };
-            // shader.vertexShader = `
-            //   uniform float time;
-            //   uniform vec3 waveDir;
-            //   ${shader.vertexShader}
-            // `.replace(
-            //   `#include <begin_vertex>`,
-            //   `#include <begin_vertex>
-            //     float angle = 0.0;
-            //     if (waveDir.x > 0.5) {
-            //         angle = sin(position.y*10.0+time);
-            //     }
-            //     if (waveDir.y > 0.5) {
-            //         angle = sin(position.x*4.0+time);
-            //     }
-            //     if (waveDir.z > 0.5) {
-            //         angle = cos(time) * 0.0;
-            //     }
-            //     mat3 rotationMatrix = mat3(
-            //         vec3( cos(angle), 0, sin(angle)),
-            //         vec3( 0, 1, 0),
-            //         vec3( -sin(angle), 0, cos(angle))
-            //     );
-            //     transformed = rotationMatrix * transformed;
-            //   `
-            // );
+              `
+              )
+            shader.vertexShader = `
+              uniform float time;
+              uniform vec3 waveDir;
+              ${shader.vertexShader}
+            `.replace(
+              `	vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );`,
+              ` vec4 end = modelViewMatrix * vec4(instanceEnd, 1.0);
+
+              // Apply wave effect
+              if (waveDir.x > 0.5) {
+                  start.x += sin(start.y * 1.0 + time) * 3.0 ;
+                  end.x -= sin(start.y * 1.0 + time)*4.0;
+              }
+              if (waveDir.y > 0.5) {
+                start.y += sin(start.x * 4.0 + time) * 4.0;
+                end.y -= sin(end.x * 4.0 + time) *2.0;
+            }
+            if (waveDir.z > 0.5) {
+                start.z += cos(time) * 0.5;
+                end.z += cos(time) * 0.5;
+            }
+
+              `
+            );
           }
 
-          // vertexColors: true,
+
         });
         let geometry = new LineGeometry();
         geometry.setPositions([point.x, point.y, point.z, otherPoint.x, otherPoint.y, otherPoint.z]);
@@ -267,7 +289,7 @@ function createLine(model) {
 
 }
 let lastUpdateTime = 0; // 上次更新时间
-const updateInterval = 1; // 更新间隔（秒）
+const updateInterval = 3; // 更新间隔（秒）
 let selectedIndices = new Set(); // 当前选中点的索引集合
 const material1 = new MeshLineMaterial({
   color: new THREE.Color(0x386acb),
@@ -284,12 +306,32 @@ const material2 = new MeshLineMaterial({
 function tick(delta, elapsedTime) {
   if (elapsedTime > 3) {
     allLineList.forEach((line) => {
-
-      line.material.uniforms.time.value += 0.05;
+      line.material.uniforms.time.value += delta;
     });
+    if (elapsedTime - lastUpdateTime > 4) {
+      lastUpdateTime = elapsedTime;
+      allLineList.forEach((line) => {
+        line.material.uniforms.randShow.value = randomBetween(-1, 1);
+      });
+    }
   }
+  // 每过4s
 
-  // shaderMaterial.uniforms.time.value += 0.05;
+  // if (elapsedTime - lastUpdateTime > 6) {
+  //   lastUpdateTime = elapsedTime;
+  //   // 从数组中随机出10个数字polyVePoints
+  //   const selectedIndices = new Set();
+  //   while (selectedIndices.size < 30) {
+  //     selectedIndices.add(Math.floor(Math.random() * polyVePoints.length));
+  //   }
+  //   // 更新选中点的索引集合
+  //   allLineList.forEach((line, index) => {
+
+  //     line.material.uniforms.isWhite.value = selectedIndices.has(index) ? true : false;
+  //   });
+
+
+  // }
 }
 
 // 写个函数从数组中随机出一个
@@ -301,3 +343,4 @@ const animation = {
   tick
 }
 export default animation;
+

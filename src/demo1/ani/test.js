@@ -1,0 +1,1 @@
+console.log(Math.sin(2 * 3.14 + 1.57))

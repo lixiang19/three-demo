@@ -17,11 +17,17 @@ export function createComposer(renderer, scene, camera) {
   // );
   const bloomPass = new UnrealBloomPass(
     undefined,
-    0.01, // 强度
-    0.1, // 半径
-    10 // 阈值
+   6, // 强度
+    0.3, // 半径
+    0.3// 阈值
   );
   composer.addPass(bloomPass);
   composer.setPixelRatio(2);
   return composer;
 }
+// if (randShow>0.0) {
+                 
+
+// } else {
+//   diffuseColor = vec4(diffuse, opacity); // 使用原色和透明度
+// }

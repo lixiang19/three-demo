@@ -81,9 +81,13 @@ class World {
     const group = await lineAnimation.createLineAni()
     // 创建个正方形
     scene.add(group);
-    scene.background = new THREE.Color(0x0e2049);
+    // scene.background = new THREE.Color(0x0e2049);
     aniCameraLine(camera)
     loop.updatables.push(lineAnimation);
+
+    // scene.fog = new THREE.FogExp2(0x2c89e0, 0.001);
+    scene.fog = new THREE.Fog(0x2c89e0, 0.1, 1000);
+
   }
   // 2. Render the scene
   render() {
