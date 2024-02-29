@@ -104,22 +104,30 @@
     padding: 10px 30px;
     display: none;
   }
+
+  .action_edit {}
+
+  .tip {}
 </style>
 
 <body>
   <div id="scene-container">
 
   </div>
-  <div class="button_wrapper action_left">
+  <div class="button_wrapper action_left action_edit">
     <div class="btn select" id="btn_camera">1镜头控制</div>
     <div class="btn" id="btn_draw">2画线功能</div>
     <div class="btn" id="btn_dot">3打点功能</div>
-    <div class="btn" id="btn_mesh">4分区展示</div>
+    <div class="btn" id="btn_dot">4涂抹热力图</div>
+    <div class="btn" id="btn_mesh">5分区展示</div>
   </div>
   <div class="button_wrapper action_right">
-    <div class="btn_show">1点云动画</div>
-    <div class="btn_show">2线条生长</div>
-    <div class="btn_show" id="btn_ani_sparkle">3粒子效果</div>
+    <div class="btn_show" id="btn_ani_line">1发光线条</div>
+    <div class="btn_show" id="btn_ani_sparkle">2粒子效果</div>
+    <div class="btn_show" id="btn_ani_sparkle">3发光线条2</div>
+    <div class="btn_show" id="btn_ani_sparkle">4线条流动点亮</div>
+
+    <div class="btn_show" id="btn_ani_edit">编辑器</div>
   </div>
   <div class="tip">
     前额叶

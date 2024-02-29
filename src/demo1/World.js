@@ -1,4 +1,4 @@
-import { createCamera, animateCamera, aniCameraLine, aniCameraSparkle } from './components/camera.js';
+import { createCamera, aniCameraFlow, animateCamera, aniCameraLine, aniCameraSparkle } from './components/camera.js';
 import { createCube } from './components/cube.js';
 import { createScene } from './components/scene.js';
 import { createBaseLight, createInnerPointLight, createSparkleLights } from './components/lights.js';
@@ -10,13 +10,14 @@ import { createControls } from './systems/controls.js';
 import { createSpotLight } from './components/SpotLight.js'
 import { DrawCurve } from './action/draw.js'
 import * as THREE from 'three';
-import { createComposer } from './systems/composerRender.js'
+import { createComposer, aniLineBloom } from './systems/composerRender.js'
 import { createBrain } from './components/brain.js'
 import { MeshShow } from './action/MeshShow.js'
 import { Dot } from './action/dot.js'
 import { createPointAni } from './ani/pointAni.js'
 import sparkAnimation from './ani/sparkle.js'
 import lineAnimation from './ani/line.js'
+import { createFlow } from './ani/flow.js'
 import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
 // https://github.com/Mamboleoo/SurfaceSampling
 // https://www.shutterstock.com/zh/video/search/similar/1058269939
@@ -56,9 +57,6 @@ class World {
     meshShow = new MeshShow(brain, camera);
     animateCamera(camera);
 
-
-
-    // loop.updatables.push(tip);
     drawCurve = new DrawCurve(scene, camera, brain, controls);
     drawDot = new Dot(scene, camera, brain, controls);
     loop.updatables.push(drawCurve);
@@ -69,6 +67,12 @@ class World {
         posTip(frontalMesh, camera)
       }
     })
+    this.addAction();
+  }
+  async aniFlowInit() {
+    const group = await createFlow()
+    scene.add(group);
+    aniCameraFlow(camera)
   }
   async aniSparkInit() {
     const group = await sparkAnimation.createSparkle()
@@ -84,7 +88,7 @@ class World {
     // scene.background = new THREE.Color(0x0e2049);
     aniCameraLine(camera)
     loop.updatables.push(lineAnimation);
-
+    aniLineBloom()
     // scene.fog = new THREE.FogExp2(0x2c89e0, 0.001);
     scene.fog = new THREE.Fog(0x2c89e0, 0.1, 1000);
 
@@ -96,8 +100,6 @@ class World {
   start() {
     loop.start();
     setTimeout(() => {
-
-      this.addAction();
       this.addAniAction()
     }, 300)
   }

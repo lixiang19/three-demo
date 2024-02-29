@@ -9,7 +9,7 @@ async function main() {
 
   // 2. Render the scene
   world.start()
-  await world.aniLineInit();
+  await world.aniFlowInit();
 }
 
 // call main to start the app

@@ -137,31 +137,30 @@ function processMesh(mesh, group) {
   }
   // 遍历几何体的所有面，找到所有唯一的边缘
   const edgesMap = {};
-  faces.forEach(face => {
-    const edgeIndices = [
-      [face.a, face.b],
-      [face.b, face.c],
-      [face.c, face.a]
-    ];
+  const edgeIndices = [
+    [face.a, face.b],
+    [face.b, face.c],
+    [face.c, face.a]
+  ];
 
-    edgeIndices.forEach(([start, end]) => {
-      const key = start < end ? `${start}_${end}` : `${end}_${start}`;
-      if (!edgesMap[key]) {
-        edgesMap[key] = [start, end];
-      }
-    });
+  edgeIndices.forEach(([start, end]) => {
+    const key = start < end ? `${start}_${end}` : `${end}_${start}`;
+    if (!edgesMap[key]) {
+      edgesMap[key] = [start, end];
+    }
   });
-  console.log("🚀 ~ processMesh ~ edgesMap:", edgesMap)
-  // 为每条边缘创建一个线段
-  Object.values(edgesMap).forEach(([start, end]) => {
+});
+console.log("🚀 ~ processMesh ~ edgesMap:", edgesMap)
+// 为每条边缘创建一个线段
+Object.values(edgesMap).forEach(([start, end]) => {
 
-    const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-      start,
-      end
-    ]);
-    const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
-    group.add(line);
-  });
+  const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+    start,
+    end
+  ]);
+  const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
+  group.add(line);
+});
 }
 function tick(delta, elapsedTime) {
 
