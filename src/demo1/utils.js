@@ -1,6 +1,11 @@
 function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
+//  随机返回数组中的一个元素
+//  @param {Array} arr - 要从中选择元素的数组
+function pickOne(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 function getRandomElementsFromArray(arr, proportion) {
   // 确保比例是在0到1之间
   if (proportion < 0) proportion = 0;
@@ -21,4 +26,4 @@ function getRandomElementsFromArray(arr, proportion) {
 
   return selectedElements;
 }
-export { randomBetween, getRandomElementsFromArray };
+export { randomBetween, pickOne, getRandomElementsFromArray };

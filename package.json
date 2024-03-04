@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@lume/three-meshline": "^4.0.5",
+    "dat.gui": "^0.7.9",
     "gsap": "^3.12.5",
     "three": "^0.160.1"
   },
