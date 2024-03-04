@@ -16,7 +16,7 @@ const pixelRatio = 2
 const group = new THREE.Group();
 const edgesMap = {};
 let pointLineMap = {}
-
+const indexWaveMap = {}
 let lightningStrikeList = []
 const allLineList = []
 let shaderMaterial = null
@@ -25,9 +25,10 @@ let shaderMaterial = null
 
 // 将polyVePoints剔除 30% .filter((p, i) => i % 2 === 0)
 // let polyVePoints = polyVe.map(p => new THREE.Vector3(p[0], p[2], -p[1]))
-// polyVePoints = getRandomElementsFromArray(polyVePoints, 0.6)
-
-const polyVePoints = polyVe.map(p => new THREE.Vector3(p.x, p.y, p.z))
+// polyVePoints = getRandomElementsFromArray(polyVePoints, 0.4)
+// console.log(polyVePoints)
+let polyVePoints = polyVe.map(p => new THREE.Vector3(p.x, p.y, p.z))
+polyVePoints = getRandomElementsFromArray(polyVePoints, 0.6)
 function setupModel(loadedData) {
   const model = loadedData.scene.children[0];
   let meshModel = null
@@ -46,8 +47,9 @@ async function createBrain() {
 }
 async function createLineAni() {
   const { model, brainData } = await createBrain();
-  createModel(model);
-  createLineold()
+  // createModel(model);
+  createLineBg()
+  createLineLight()
   // createLightAni()
   group.position.set(0, -100, 0);
   return group;
@@ -118,15 +120,18 @@ function createModel(model) {
     color: 0x4062b7,
     // 透明
     transparent: true,
-    opacity: 0.02,
+    opacity: 0.03,
   });
 
   let mesh = new THREE.Mesh(model.geometry, shaderMaterial);
+  mesh.scale.set(0.9, 0.9, 0.9);
+  mesh.position.set(0, 15, 0);
   group.add(mesh);
 
 }
 function createLine() {
   const range = 30;
+  const maxRange = 60;
   polyVePoints.forEach((point, index) => {
     pointLineMap[index] = {}
     // 遍历剩余的点
@@ -159,120 +164,268 @@ function createLine() {
   });
 
 }
+function createLineLight() {
+
+  const newPoints = polyVePoints.slice(0, 100)
+  const minRange = 10;
+  const maxRange = 30;
+  const pointLineMap = {}
+  const edgesMap = {};
+  newPoints.forEach((point, index) => {
+    pointLineMap[index] = []
+    // 遍历剩余的点
+    for (let i = index + 1; i < newPoints.length; i++) {
+      if (i === index) {
+        continue
+      }
+      const otherPoint = newPoints[i];
+      // 计算距离
+      const distance = point.distanceTo(otherPoint);
+      // const distance = 1
+      // 如果距离在特定范围内，则创建线段
+      if (distance >= minRange && distance <= maxRange) {
+        if (!edgesMap[`${index}-${i}`]) {
+          pointLineMap[index].push(i)
+          edgesMap[`${index}-${i}`] = true
+          edgesMap[`${i}-${index}`] = true
+        }
+
+      }
+    }
+    pointLineMap[index].forEach((otherIndex) => {
+      createOneLineLight(index, otherIndex, '0xffffff')
+    })
+  });
+}
+function createOneLineLight(index, otherIndex) {
+  const point = polyVePoints[index]
+  const otherPoint = polyVePoints[otherIndex]
+  if (!indexWaveMap[index]) {
+    indexWaveMap[index] = randomArray(
+      [new THREE.Vector3(1.0, 0.0, 0.0),
+      new THREE.Vector3(0.0, 1.0, 0.0),
+      new THREE.Vector3(0.0, 0.0, 1.0),
+      new THREE.Vector3(0.0, 0.0, 0.0),
+      ]
+    )
+  }
+  if (!indexWaveMap[otherIndex]) {
+    indexWaveMap[otherIndex] = randomArray(
+      [new THREE.Vector3(1.0, 0.0, 0.0),
+      new THREE.Vector3(0.0, 1.0, 0.0),
+      new THREE.Vector3(0.0, 0.0, 1.0),
+      new THREE.Vector3(0.0, 0.0, 0.0),
+      ]
+    )
+  }
+
+  const startWaveDir = indexWaveMap[index]
+  const endWaveDir = indexWaveMap[otherIndex]
+  let matLine = new LineMaterial({
+    transparent: true,
+    color: 0xFFFFFF,
+    linewidth: 0.002, // in pixels
+    opacity: 0.01,
+    // alphaToCoverage: true,
+    onBeforeCompile: shader => {
+      shader.uniforms.time = { value: 0 };
+      shader.uniforms.isShow = { value: true };
+      shader.uniforms.startWaveDir = { value: startWaveDir };
+      shader.uniforms.endWaveDir = { value: endWaveDir };
+      shader.fragmentShader = `
+        uniform bool isShow;
+      ${shader.fragmentShader}
+      `
+        .replace(
+          `gl_FragColor = vec4( diffuseColor.rgb, alpha );`,
+          `
+          if (isShow) {
+            vec3 color = vec3(1.0, 1.0, 1.0);
+    
+       
+            // 将蓝光添加到基础颜色中
+            color += vec3(0.0, 0.0, 1.0);
+            
+            gl_FragColor = vec4(color, 1.0);
+          
+          } else {
+            discard;
+          }
+          `
+        )
+      shader.vertexShader = `
+        uniform float time;
+        uniform vec3 startWaveDir;
+        uniform vec3 endWaveDir;
+        
+        ${shader.vertexShader}
+      `.replace(
+        `	vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );`,
+        ` vec4 end = modelViewMatrix * vec4(instanceEnd, 1.0);
+
+        // Apply wave effect
+        if (startWaveDir.x > 0.5) {
+            start.x -= sin(time) * 4.0 ;
+        }
+        if (endWaveDir.x > 0.5) {
+          end.x -= sin(time) * 4.0 ;
+        }
+       
+        if (startWaveDir.y > 0.5) {
+         start.y += sin(start.y* 1.0 + time) * 4.0;
+        } 
+        if (endWaveDir.y > 0.5) {
+          end.y += sin(end.y* 1.0 +time) * 4.0;
+         } 
+   
+         if (startWaveDir.z > 0.5) {
+          start.z += sin(start.z * 1.0 + time) * 4.0;
+       
+         } 
+          if (endWaveDir.z > 0.5) {
+            end.z += sin(end.z * 1.0 + time) * 4.0;
+          }
+
+
+        `
+      );
+    }
+
+
+  });
+  let geometry = new LineGeometry();
+  geometry.setPositions([point.x, point.y, point.z, otherPoint.x, otherPoint.y, otherPoint.z]);
+  const line2 = new Line2(geometry, matLine);
+  allLineList.push(line2)
+  group.add(line2)
+}
 // 测试线条
-function createLineold() {
-  const range = 30;
+function createLineBg() {
+  const minRange = 10;
   const nearList = []
-  // polyVePoints = [polyVePoints[0], polyVePoints[100], polyVePoints[200]]
+  const maxRange = 40;
+
   polyVePoints.forEach((point, index) => {
-    pointLineMap[index] = {}
+    pointLineMap[index] = []
     // 遍历剩余的点
     for (let i = index + 1; i < polyVePoints.length; i++) {
+      if (i === index) {
+        continue
+      }
       const otherPoint = polyVePoints[i];
       // 计算距离
       const distance = point.distanceTo(otherPoint);
       // const distance = 1
       // 如果距离在特定范围内，则创建线段
-      if (distance <= range) {
-
-
-        const waveDir = randomArray(
-          [new THREE.Vector3(1.0, 0.0, 0.0),
-          new THREE.Vector3(0.0, 1.0, 0.0),
-          new THREE.Vector3(0.0, 0.0, 1.0),
-          new THREE.Vector3(0.0, 1.0, 1.0),
-          new THREE.Vector3(0.0, 0.0, 0.0),
-          ]
-        )
-        let isWhite = false
-        if (index < 5) {
-          isWhite = true
-          nearList.push(i)
-
+      if (distance >= minRange && distance <= maxRange) {
+        if (!edgesMap[`${index}-${i}`]) {
+          pointLineMap[index].push(i)
+          edgesMap[`${index}-${i}`] = true
+          edgesMap[`${i}-${index}`] = true
         }
-        if (nearList.includes(index)) {
-          isWhite = true
-        }
-
-        const randShow = 1
-
-        let matLine = new LineMaterial({
-          transparent: true,
-          color: 0x4e7bdf,
-          linewidth: 0.002, // in pixels
-          opacity: 0.1,
-          alphaToCoverage: true,
-          onBeforeCompile: shader => {
-            shader.uniforms.time = { value: 0 };
-            shader.uniforms.waveDir = { value: waveDir };
-
-
-            // shader.fragmentShader = `
-            // ${shader.fragmentShader}
-            // `.replace(
-            //   `vec4 diffuseColor = vec4( diffuse, alpha );`,
-            //   `vec4 diffuseColor = vec4( diffuse, alpha );
-            //   if (isWhite) {
-            //     // 使用正弦函数和时间创建一个周期性变化
-            //     float factor = sin(time * 1.0); // 3.14159是π的近似值，用于转换为弧度
-            //     if (factor > randShow) {
-            //       diffuseColor = vec4(2.0, 2.0, 2.0, 1.0); // 白色
-            //     }
-
-            // }`
-            // )
-            //   .replace(
-            //     `gl_FragColor = vec4( diffuseColor.rgb, alpha );`,
-            //     `
-            //     if (isWhite) {
-            //       gl_FragColor = vec4(diffuseColor.rgb, 0.2);
-            //     }else {
-            //       gl_FragColor = vec4(diffuseColor.rgb, alpha);
-            //     }
-
-            //   `
-            //   )
-            shader.vertexShader = `
-              uniform float time;
-              uniform vec3 waveDir;
-              ${shader.vertexShader}
-            `.replace(
-              `	vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );`,
-              ` vec4 end = modelViewMatrix * vec4(instanceEnd, 1.0);
-
-              // Apply wave effect
-              if (waveDir.x > 0.5) {
-                  start.x += sin(start.y * 1.0 + time) * 3.0 ;
-                  end.x -= sin(start.y * 1.0 + time)*4.0;
-              }
-              if (waveDir.y > 0.5) {
-                start.y += sin(start.x * 4.0 + time) * 4.0;
-                end.y -= sin(end.x * 4.0 + time) *2.0;
-            }
-            if (waveDir.z > 0.5) {
-                start.z += cos(time) * 0.5;
-                end.z += cos(time) * 0.5;
-            }
-
-              `
-            );
-          }
-
-
-        });
-        let geometry = new LineGeometry();
-        geometry.setPositions([point.x, point.y, point.z, otherPoint.x, otherPoint.y, otherPoint.z]);
-
-        const line2 = new Line2(geometry, matLine);
-        line2.scale.set(1, 1, 1);
-        group.add(line2)
-        pointLineMap[index][i] = line2
-        allLineList.push(line2)
 
       }
     }
+    pointLineMap[index].forEach((otherIndex) => {
+      createOneLine(index, otherIndex)
+    })
   });
 
+}
+function createOneLine(index, otherIndex) {
+  const point = polyVePoints[index]
+  const otherPoint = polyVePoints[otherIndex]
+  if (!indexWaveMap[index]) {
+    indexWaveMap[index] = randomArray(
+      [new THREE.Vector3(1.0, 0.0, 0.0),
+      new THREE.Vector3(0.0, 1.0, 0.0),
+      new THREE.Vector3(0.0, 0.0, 1.0),
+      new THREE.Vector3(0.0, 0.0, 0.0),
+      ]
+    )
+  }
+  if (!indexWaveMap[otherIndex]) {
+    indexWaveMap[otherIndex] = randomArray(
+      [new THREE.Vector3(1.0, 0.0, 0.0),
+      new THREE.Vector3(0.0, 1.0, 0.0),
+      new THREE.Vector3(0.0, 0.0, 1.0),
+      new THREE.Vector3(0.0, 0.0, 0.0),
+      ]
+    )
+  }
+
+  const startWaveDir = indexWaveMap[index]
+  const endWaveDir = indexWaveMap[otherIndex]
+  let matLine = new LineMaterial({
+    transparent: true,
+    color: 0x3d71ca,
+    linewidth: 0.002, // in pixels
+    opacity: 0.02,
+    // alphaToCoverage: true,
+    onBeforeCompile: shader => {
+      shader.uniforms.time = { value: 0 };
+      shader.uniforms.isShow = { value: true };
+      shader.uniforms.startWaveDir = { value: startWaveDir };
+      shader.uniforms.endWaveDir = { value: endWaveDir };
+      shader.fragmentShader = `
+        uniform bool isShow;
+      ${shader.fragmentShader}
+      `
+        .replace(
+          `gl_FragColor = vec4( diffuseColor.rgb, alpha );`,
+          `
+          if (isShow) {
+            gl_FragColor = vec4( diffuseColor.rgb, alpha );
+          } else {
+            discard;
+          }
+          `
+        )
+      shader.vertexShader = `
+        uniform float time;
+        uniform vec3 startWaveDir;
+        uniform vec3 endWaveDir;
+        
+        ${shader.vertexShader}
+      `.replace(
+        `	vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );`,
+        ` vec4 end = modelViewMatrix * vec4(instanceEnd, 1.0);
+
+        // Apply wave effect
+        if (startWaveDir.x > 0.5) {
+            start.x -= sin(time) * 4.0 ;
+        }
+        if (endWaveDir.x > 0.5) {
+          end.x -= sin(time) * 4.0 ;
+        }
+       
+        if (startWaveDir.y > 0.5) {
+         start.y += sin(start.y* 1.0 + time) * 4.0;
+        } 
+        if (endWaveDir.y > 0.5) {
+          end.y += sin(end.y* 1.0 +time) * 4.0;
+         } 
+   
+         if (startWaveDir.z > 0.5) {
+          start.z += sin(start.z * 1.0 + time) * 4.0;
+       
+         } 
+          if (endWaveDir.z > 0.5) {
+            end.z += sin(end.z * 1.0 + time) * 4.0;
+          }
+
+
+        `
+      );
+    }
+
+
+  });
+  let geometry = new LineGeometry();
+  geometry.setPositions([point.x, point.y, point.z, otherPoint.x, otherPoint.y, otherPoint.z]);
+  const line2 = new Line2(geometry, matLine);
+  allLineList.push(line2)
+  group.add(line2)
 }
 
 let lastUpdateTime = 0; // 上次更新时间
@@ -280,13 +433,25 @@ let lastUpdateTime = 0; // 上次更新时间
 let accumulatedTime = 0;
 const updateInterval = 3; // 更新间隔（秒）
 let selectedIndices = new Set(); // 当前选中点的索引集合
-
+const lineIndexTime = {}
 function tick(delta, elapsedTime) {
   if (elapsedTime > 3) {
-    allLineList.forEach((line) => {
-
+    allLineList.forEach((line, index) => {
       line.material.uniforms.time.value += delta;
-
+      if (index < 300) {
+        if (!lineIndexTime[index]) {
+          lineIndexTime[index] = {
+            timeMax: randomBetween(3, 6),
+            time: 0
+          }
+        }
+        lineIndexTime[index].time += delta
+        if (lineIndexTime[index].time > lineIndexTime[index].timeMax) {
+          line.material.uniforms.isShow.value = !line.material.uniforms.isShow.value
+          lineIndexTime[index].time = 0
+          lineIndexTime[index].timeMax = randomBetween(3, 6)
+        }
+      }
     });
     lightningStrikeList.forEach(lightningStrike => {
       lightningStrike.update(elapsedTime);

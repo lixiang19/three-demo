@@ -90,7 +90,7 @@ class World {
     loop.updatables.push(lineAnimation);
     aniLineBloom()
     // scene.fog = new THREE.FogExp2(0x2c89e0, 0.001);
-    scene.fog = new THREE.Fog(0x2c89e0, 0.1, 1000);
+    // scene.fog = new THREE.Fog(0x2c89e0, 0.1, 1000);
 
   }
   // 2. Render the scene
