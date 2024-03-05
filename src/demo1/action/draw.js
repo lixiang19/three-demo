@@ -7,7 +7,7 @@ let lastPoint = null;
 let closestVertex = null;
 import * as THREE from 'three'
 let clock = new Clock();
-import { Points } from '../components/points.js'
+import { Points } from '../edit/points.js'
 function createTube(curve) {
   // shaderMaterial
   const vertexShader = `

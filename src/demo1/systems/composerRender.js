@@ -27,7 +27,17 @@ export function createComposer(renderer, scene, camera) {
   return composer;
 }
 export function aniLineBloom() {
-  bloomPass.strength = 1.5
-  bloomPass.threshold = 1
+  bloomPass.strength = 6
+  bloomPass.threshold = 0.1
   bloomPass.radius = 1
+}
+export function aniSparkBloom() {
+  bloomPass.strength = 1
+  bloomPass.threshold = 0.4
+  bloomPass.radius = 0.85
+}
+export function aniSparkEnterBloom() {
+  bloomPass.strength = 1
+  bloomPass.threshold = 1
+  bloomPass.radius = 0.85
 }
