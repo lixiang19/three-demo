@@ -209,6 +209,7 @@ const updateInterval = 3; // 更新间隔（秒）
 let selectedIndices = new Set(); // 当前选中点的索引集合
 const lineIndexTime = {}
 function tick(delta, elapsedTime) {
+  group.rotation.y += 0.0002;
   allLineList.forEach((line, index) => {
     line.material.uniforms.time.value += delta;
     if (index < 300) {

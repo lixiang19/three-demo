@@ -60,7 +60,7 @@ class World {
     loop.updatables.push(sparkAnimation);
   }
   async aniSparkEnterInit() {
-    aniGroup = await sparkEnterAnimation.createSparkle()
+    aniGroup = await sparkEnterAnimation.createMain()
     scene.add(aniGroup);
     aniSparkEnterBloom()
     aniCameraSparkle()
