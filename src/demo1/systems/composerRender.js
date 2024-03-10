@@ -47,8 +47,8 @@ export function aniLightBloom() {
   bloomPass.radius = 0.85
 }
 export function aniEditBloom() {
-  bloomPass.strength = 0.5
-  bloomPass.threshold = 1.5
+  bloomPass.strength =0.9
+  bloomPass.threshold = 1.9
   bloomPass.radius = 0
 }
 export function aniFlowBloom() {

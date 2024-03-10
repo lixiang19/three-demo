@@ -91,10 +91,7 @@ class World {
   async aniLightInit() {
     aniGroup = await aniLight.main()
     scene.add(aniGroup);
-    const lights = createLineLight()
-    lights.forEach(light => {
-      scene.add(light)
-    })
+
     aniCameraLight()
     aniLightBloom()
     await sleep(2000)
@@ -105,10 +102,7 @@ class World {
     // scene.background = new THREE.Color("#494f5c");
     aniGroup = await lineAnimation.createLineAni()
     scene.add(aniGroup);
-    const lights = createLineLight()
-    lights.forEach(light => {
-      scene.add(light)
-    })
+ 
     aniCameraLine()
     aniLineBloom()
     await sleep(2000)

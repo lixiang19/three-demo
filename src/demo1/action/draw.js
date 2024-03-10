@@ -28,7 +28,7 @@ function createTube(curve) {
   varying vec2 vUv;
   varying float vProgress;
   void main() {
-    vec3 finalColor = mix(color+vec3(0.7),bgColor +vec3(0.5), vProgress);
+    vec3 finalColor = mix(color+vec3(1.0),bgColor +vec3(0.5), vProgress);
     gl_FragColor = vec4(finalColor, 1); // 正确设置RGBA值
   }
     `;
@@ -87,11 +87,11 @@ class DrawCurve {
   }
 
   addPoint(point) {
-    // if (this.curvePoints.length > 0) {
-    //   const lastPoint = this.curvePoints[this.curvePoints.length - 1];
-    //   const distance = lastPoint.distanceTo(point);
-    //   if (distance < 0.1) return; // 忽略太近的点
-    // }
+    if (this.curvePoints.length > 0) {
+      const lastPoint = this.curvePoints[this.curvePoints.length - 1];
+      const distance = lastPoint.distanceTo(point);
+      if (distance < 0.1) return; // 忽略太近的点
+    }
     this.curvePoints.push(point);
     const points = new Float32Array(this.curvePoints.length * 3);
     for (let i = 0; i < this.curvePoints.length; i++) {
