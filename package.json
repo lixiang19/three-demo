@@ -12,9 +12,13 @@
     "@lume/three-meshline": "^4.0.5",
     "dat.gui": "^0.7.9",
     "gsap": "^3.12.5",
-    "three": "^0.160.1"
+    "lodash-es": "^4.17.21",
+    "three": "^0.160.1",
+    "three-bas": "^3.0.0",
+    "vite-plugin-xml-loader": "^1.0.2"
   },
   "devDependencies": {
+    "@originjs/vite-plugin-content": "^1.0.5",
     "vite": "^5.0.12"
   }
 }

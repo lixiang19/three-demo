@@ -17,16 +17,17 @@ class MeshShow {
   toggleMain() {
     this.model.traverse((object) => {
       if (object.isMesh) {
-        object.material.opacity = 0.3;
+        object.material.opacity = 0.1;
         object.material.color = new THREE.Color(0x469cf8);
       }
     });
     document.querySelector('.detail').style.display = 'none';
     gsap.to(this.camera.position, {
       duration: 1, // 动画持续时间，单位为秒
-      x: 70,
-      y: 10,
-      z: 40,
+      x: 49,
+      y: 13,
+      z: -0.8,
+    
       ease: "power1.out", // 缓动函数，可以根据需求选择不同的效果
     });
   }
@@ -36,7 +37,7 @@ class MeshShow {
       if (object.isMesh) {
 
         if (object.name === 'frontal_01_-_Default_0') {
-          object.material.opacity = 0.5;
+          object.material.opacity = 0.3;
           object.material.color = new THREE.Color(0x00ff00);
 
         }

@@ -12,9 +12,9 @@ export function createComposer(renderer, scene, camera) {
   // 创建UnrealBloomPass
   bloomPass = new UnrealBloomPass(
     undefined,
-    1.5, // 强度
-    0.4, // 半径
-    0.85 // 阈值
+    0.5, // 强度
+    1, // 半径
+    2 // 阈值
   );
   // const  = new UnrealBloomPass(
   //   undefined,
@@ -27,9 +27,9 @@ export function createComposer(renderer, scene, camera) {
   return composer;
 }
 export function aniLineBloom() {
-  bloomPass.strength = 10
+  bloomPass.strength = 6
   bloomPass.threshold = 0.1
-  bloomPass.radius = 1
+  bloomPass.radius = 0.5
 }
 export function aniSparkBloom() {
   bloomPass.strength = 1
@@ -37,6 +37,21 @@ export function aniSparkBloom() {
   bloomPass.radius = 0.85
 }
 export function aniSparkEnterBloom() {
+  bloomPass.strength =0
+  bloomPass.threshold = 1
+  bloomPass.radius = 0.85
+}
+export function aniLightBloom() {
+  bloomPass.strength = 3
+  bloomPass.threshold = 1
+  bloomPass.radius = 0.85
+}
+export function aniEditBloom() {
+  bloomPass.strength = 0.5
+  bloomPass.threshold = 1.5
+  bloomPass.radius = 0
+}
+export function aniFlowBloom() {
   bloomPass.strength = 1
   bloomPass.threshold = 1
   bloomPass.radius = 0.85

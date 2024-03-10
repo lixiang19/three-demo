@@ -1,8 +1,7 @@
 import { PointLight, AmbientLight } from 'three';
-
+import * as THREE from 'three';
 function createBaseLight() {
-  const ambientLight = new AmbientLight('white', 4);
-
+  const ambientLight = new AmbientLight('white',10);
   return ambientLight;
 }
 function createInnerPointLight() {
@@ -11,15 +10,32 @@ function createInnerPointLight() {
   return { innerLight };
 }
 
-function createSparkleLights() {
-  const light1 = new PointLight('white', 100);
-  light1.position.set(-2, 0, 0);
-  const light2 = new PointLight('white', 10, 0);
-  light2.position.set(2, 0, 0);
+function createLineLight() {
+  // 加个聚光灯
+  const ambientLight = new AmbientLight('white',10);
 
-  const light3 = new PointLight('white', 10, 0);
-  light3.position.set(2, -1, 10);
+  return [ambientLight]
 
-  return [light1]
 }
-export { createBaseLight, createInnerPointLight, createSparkleLights };
+function createSparkleEnterLights() {
+
+  const directionalLight = new THREE.DirectionalLight( 0xffffff,1 );
+  directionalLight.castShadow  = true;
+  directionalLight.position.set( 0, 100, 0 );
+  directionalLight.shadow.mapSize.width = 5120; // default
+  directionalLight.shadow.mapSize.height = 5120; // default
+  directionalLight.shadow.camera.near = 0.5; // default
+  directionalLight.shadow.camera.far = 500; // default
+  const d = 50; // 根据场景大小调整这个值
+  directionalLight.shadow.camera.left = -d;
+  directionalLight.shadow.camera.right = d;
+  directionalLight.shadow.camera.top = d;
+  directionalLight.shadow.camera.bottom = -d;
+  
+
+
+
+
+  return [ directionalLight]
+}
+export { createBaseLight, createLineLight,createInnerPointLight, createSparkleEnterLights };

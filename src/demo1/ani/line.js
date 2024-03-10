@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import LightningStrike from '../lib/LightningStrike.js'
-
+import {createXRayMaterial} from './xRayMaterial.js'
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import BrainModel from '../assets/model/brain5000.glb?url';
 import dotTexture from '../assets/textures/dotTexture.png?url';
@@ -28,7 +28,7 @@ let shaderMaterial = null
 // polyVePoints = getRandomElementsFromArray(polyVePoints, 0.4)
 // console.log(polyVePoints)
 let polyVePoints = polyVe.map(p => new THREE.Vector3(p.x, p.y, p.z))
-polyVePoints = getRandomElementsFromArray(polyVePoints, 0.6)
+polyVePoints = getRandomElementsFromArray(polyVePoints, 0.5)
 function setupModel(loadedData) {
   const model = loadedData.scene.children[0];
   let meshModel = null
@@ -58,16 +58,11 @@ async function createLineAni() {
 // 创建模型
 function createModel(model) {
   // 创建自定义的着色器材质
-  const shaderMaterial = new THREE.MeshBasicMaterial({
-    color: 0x4062b7,
-    // 透明
-    transparent: true,
-    opacity: 0.03,
-  });
 
-  let mesh = new THREE.Mesh(model.geometry, shaderMaterial);
-  mesh.scale.set(0.9, 0.9, 0.9);
-  mesh.position.set(0, 15, 0);
+
+  let mesh = new THREE.Mesh(model.geometry,  createXRayMaterial());
+  // mesh.scale.set(0.9, 0.9, 0.9);
+  // mesh.position.set(0, 15, 0);
   group.add(mesh);
 
 }
@@ -75,9 +70,9 @@ function createModel(model) {
 
 // 测试线条
 function createLineBg() {
-  const minRange = 10;
+  const minRange = 20;
   const nearList = []
-  const maxRange = 30;
+  const maxRange =30;
 
   polyVePoints.forEach((point, index) => {
     pointLineMap[index] = []
@@ -132,9 +127,9 @@ function createOneLine(index, otherIndex) {
   const endWaveDir = indexWaveMap[otherIndex]
   let matLine = new LineMaterial({
     transparent: true,
-    color: 0x3d71ca,
+    color: 0x6ea0ff,
     linewidth: 0.002, // in pixels
-    opacity: 0.06,
+    opacity: 0.05,
     alphaToCoverage: true,
     onBeforeCompile: shader => {
       shader.uniforms.time = { value: 0 };
@@ -212,7 +207,7 @@ function tick(delta, elapsedTime) {
   group.rotation.y += 0.0002;
   allLineList.forEach((line, index) => {
     line.material.uniforms.time.value += delta;
-    if (index < 300) {
+    if (index < 200) {
       if (!lineIndexTime[index]) {
         lineIndexTime[index] = {
           timeMax: randomBetween(3, 6),

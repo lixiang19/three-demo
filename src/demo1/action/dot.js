@@ -13,6 +13,7 @@ class Dot {
   }
   onMouseDown(e) {
     if (!this.isDotMode) return
+    if (event.button !== 0) return;
     this.setDot(e);
   }
   setDot(event) {
@@ -21,15 +22,16 @@ class Dot {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, this.camera);
     const intersects = raycaster.intersectObject(this.model, true);
-    console.log("🚀 ~ Dot ~ setDot ~ intersects:", intersects)
+    
     if (intersects.length > 0) {
       const point = intersects[0].point;
-      console.log('点位是', point)
+    
       points.add(point);
       if (points.size > 0) {
         this.renderPoint(point);
       }
     }
+    console.log('点位集合是', points)
   }
   tick(delta, elapsedTime) {
 
@@ -49,7 +51,7 @@ class Dot {
     this.scene.add(sphere);
   }
   startListen() {
-    this.controls.enabled = false;
+    // this.controls.enabled = false;
     window.addEventListener('mousedown', this.onMouseDown.bind(this), false);
     this.isDotMode = true;
   }

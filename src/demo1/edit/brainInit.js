@@ -12,10 +12,11 @@ function setupModel(data) {
     if (object.isMesh) {
       const material = new THREE.MeshPhongMaterial({
         color: 0x469cf8, // 白色，你可以根据需要调整颜色
-        opacity: 0.5, // 设置透明度，玻璃通常是半透明的，可以根据需要调整
+        opacity: 0.1, // 设置透明度，玻璃通常是半透明的，可以根据需要调整
         transparent: true, // 开启透明效果
       });
       object.material = material;
+    
     }
   });
 
@@ -25,7 +26,7 @@ async function createBrain() {
   const loader = new GLTFLoader();
   const loadedData = await loader.loadAsync(BrainModel);
   const brainModel = setupModel(loadedData);
-  brainModel.position.set(-10, -10, 0);
+  brainModel.position.set(-15, -5, 0);
   return { brainModel, brainData: loadedData };
 }
 
@@ -34,10 +35,12 @@ let drawCurve
 let drawDot
 let meshShow
 let brain
+let controls
 let group = new THREE.Group()
+
 async function editMain(camera, controls, loop) {
   const { brainModel, brainData } = await createBrain();
-
+  controls  = controls;
   brain = brainModel;
   group.add(brain);
   meshShow = new MeshShow(brain, camera);
@@ -71,7 +74,7 @@ function addAction() {
     // 把画线停了
     drawCurve.stopListen();
     drawDot.stopListen();
-    controls.enabled = true
+   
     meshShow.toggleMain();
   });
   const toggleMeshButton = document.getElementById('btn_mesh');

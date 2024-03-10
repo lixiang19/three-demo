@@ -20,9 +20,10 @@ function animateCamera() {
 
   gsap.to(camera.position, {
     duration: 2,
-    x: 70,
-    y: 10,
-    z: 30,
+    x: 49,
+    y: 13,
+    z: -0.8,
+  
     ease: "power1.out",
   });
   camera.updateProjectionMatrix();
@@ -43,7 +44,17 @@ function aniCameraLine() {
     duration: 2,
     x: 1.7,
     y: 18,
-    z: 429,
+    z: 300,
+    ease: "power1.out",
+  });
+  camera.updateProjectionMatrix();
+}
+function aniCameraLight() {
+  gsap.to(camera.position, {
+    duration: 2,
+    x: 1.7,
+    y: 18,
+    z: 400,
     ease: "power1.out",
   });
   camera.updateProjectionMatrix();
@@ -51,11 +62,26 @@ function aniCameraLine() {
 function aniCameraFlow() {
   gsap.to(camera.position, {
     duration: 2,
-    x: -3.6,
-    y: 0.01,
-    z: 0.43,
+    x: 22,
+    y: 14,
+    z: 42, 
     ease: "power1.out",
   });
   camera.updateProjectionMatrix();
 }
-export { createCamera, aniCameraFlow, animateCamera, aniCameraLine, aniCameraSparkle };
+function aniCameraSparkleEnter() {
+  // camera.position.z = 1000;
+  gsap.to(camera.position, {
+    duration:1,
+    z: 1000,
+    ease: "power1.out",
+  });
+  gsap.to(camera.position, {
+    duration:3,
+    delay: 1,
+    z: 500,
+    ease: "power1.out",
+  });
+ 
+}
+export { createCamera,aniCameraLight,aniCameraSparkleEnter, aniCameraFlow, animateCamera, aniCameraLine, aniCameraSparkle };

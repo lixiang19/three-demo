@@ -179,7 +179,7 @@ class Sparkle extends THREE.Vector3 {
 let _prev = 0;
 function tick(delta, elapsedTime) {
 
-  group.rotation.x = Math.sin(elapsedTime * 0.0003) * 0.1;
+  
   group.rotation.y += 0.001;
 
   if (elapsedTime - _prev > 0.001) {

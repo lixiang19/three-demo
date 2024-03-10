@@ -28,14 +28,14 @@ function createTube(curve) {
   varying vec2 vUv;
   varying float vProgress;
   void main() {
-    vec3 finalColor = mix(color,bgColor , vProgress);
+    vec3 finalColor = mix(color+vec3(0.7),bgColor +vec3(0.5), vProgress);
     gl_FragColor = vec4(finalColor, 1); // 正确设置RGBA值
   }
     `;
   const uniforms = {
     time: { value: 0 },
     color: { value: new THREE.Color("rgb(255, 255, 255)") },
-    bgColor: { value: new THREE.Color("rgb(136, 243, 236)") },// 159, 213, 255 
+    bgColor: { value: new THREE.Color("rgb(143, 206, 255)") },// 159, 213, 255 
   };
   const shaderMaterial = new THREE.ShaderMaterial({
     uniforms,
@@ -54,47 +54,69 @@ class DrawCurve {
     this.scene = scene;
     this.camera = camera;
     this.model = model;
-    this.curveObject = null; // 维护当前曲线对象的引用
-    this.praticeObject = null; // 维护当前曲线对象的引用
-    this.isDrawMode = false; // 是否是绘制模式
+    this.curveObject = null;
+    this.isDrawMode = false;
     this.controls = controls;
-    this.curve = [];
-    // 支持多条线
-    this.curves = [];
+    this.curvePoints = [];
+    this.lines = [];
+    this.lineMaterials = [];
+    this.lineGeometries = [];
     this.tubes = [];
     this.pratices = [];
+    // const points = list.map(item => new THREE.Vector3(item.x, item.y, item.z))
+    // const curve = new THREE.CatmullRomCurve3(points);
+    // const tube = createTube(curve);
+    // this.tubes.push(tube);
+    // this.scene.add(tube);
   }
+
   tick(delta) {
+    // Update the line animation or other tick-related logic here
     if (this.tubes.length > 0) {
       this.tubes.forEach((tube) => {
         tube.material.uniforms.time.value += (delta * 2);
       });
     }
-    if (this.praticeObject) {
-      this.praticeObject.tick(delta);
-    }
   }
+
   toggleDrawMode() {
-    this.isDrawMode = true
-    this.controls.enabled = !this.isDrawMode; // 根据绘制模式启用/禁用OrbitControls
-    points.clear()
+    this.isDrawMode = !this.isDrawMode;
+    // this.controls.enabled = !this.isDrawMode;
+  
     return this.isDrawMode;
   }
-  updateCurve() {
-    const curve = new THREE.CatmullRomCurve3(Array.from(points));
-    this.curve = curve;
-    const tube = createTube(curve);
-    if (this.curveObject) {
-      this.scene.remove(this.curveObject);
+
+  addPoint(point) {
+    // if (this.curvePoints.length > 0) {
+    //   const lastPoint = this.curvePoints[this.curvePoints.length - 1];
+    //   const distance = lastPoint.distanceTo(point);
+    //   if (distance < 0.1) return; // 忽略太近的点
+    // }
+    this.curvePoints.push(point);
+    const points = new Float32Array(this.curvePoints.length * 3);
+    for (let i = 0; i < this.curvePoints.length; i++) {
+      points[i * 3] = this.curvePoints[i].x;
+      points[i * 3 + 1] = this.curvePoints[i].y;
+      points[i * 3 + 2] = this.curvePoints[i].z;
     }
-    this.curveObject = tube;
-    this.scene.add(this.curveObject);
+    this.lineGeometries[this.lineGeometries.length - 1].setAttribute('position', new THREE.BufferAttribute(points, 3));
+    this.lineGeometries[this.lineGeometries.length - 1].setDrawRange(0, this.curvePoints.length);
+    this.lineGeometries[this.lineGeometries.length - 1].attributes.position.needsUpdate = true;
+  }
+
+  startNewCurve() {
+    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const geometry = new THREE.BufferGeometry();
+    this.lineMaterials.push(material);
+    this.lineGeometries.push(geometry);
+    const line = new THREE.Line(geometry, material);
+    this.lines.push(line);
+    this.scene.add(line);
   }
 
   onMouseMove(event) {
-    if (!this.isDrawMode) return; // 如果不是绘制模式，不执行任何操作
-
-    // 将鼠标位置转换为归一化设备坐标(NDC)
+    if (!this.isDrawMode) return;
+    if (event.button !== 0) return;
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -103,48 +125,47 @@ class DrawCurve {
       const intersects = raycaster.intersectObject(this.model, true);
       if (intersects.length > 0) {
         const point = intersects[0].point;
-
-        points.add(point);
-
-        if (points.size > 1) {
-          this.updateCurve();
-        }
-
+        this.addPoint(point);
       }
-
     }
   }
 
   onMouseDown(event) {
-    if (!this.isDrawMode) return; // 如果不是绘制模式，不执行任何操作
-
+    if (!this.isDrawMode) return;
+    // 只监听左键
+    if (event.button !== 0) return;
     isDrawing = true;
+    this.startNewCurve();
   }
-  onMouseUp(event) {
-    if (!this.isDrawMode) return; // 如果不是绘制模式，不执行任何操作
 
+  onMouseUp(event) {
+    if (!this.isDrawMode) return;
+    if (event.button !== 0) return;
     isDrawing = false;
-    if (this.curveObject) {
-      this.curves.push(this.curve);
-      this.tubes.push(this.curveObject);
-      this.curveObject = null;
+    if (this.lines.length > 0) {
+      // 添加tube
+      console.log('线条点位数组', this.curvePoints)
+      const curve = new THREE.CatmullRomCurve3(this.curvePoints);
+      const tube = createTube(curve);
+      this.tubes.push(tube);
+      this.scene.add(tube);
+
+      const line = this.lines[this.lines.length - 1];
+      this.scene.remove(line);
+      this.lines.pop();
+      this.lineMaterials.pop();
+      this.lineGeometries.pop();
     }
-    points.clear();
-    // if (this.praticeObject) {
-    //   this.scene.remove(this.praticeObject.pratice);
-    // }
-    // const point = new Points(this.curves);
-    // point.init()
-    // const pratice = point.createParticles();
-    // this.praticeObject = point;
-    // this.scene.add(pratice);
+    this.curvePoints = [];
   }
+
   startListen() {
     window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
     window.addEventListener('mousedown', this.onMouseDown.bind(this), false);
     window.addEventListener('mouseup', this.onMouseUp.bind(this), false);
     this.toggleDrawMode();
   }
+
   stopListen() {
     this.isDrawMode = false;
     window.removeEventListener('mousemove', this.onMouseMove.bind(this), false);
@@ -152,4 +173,5 @@ class DrawCurve {
     window.removeEventListener('mouseup', this.onMouseUp.bind(this), false);
   }
 }
+
 export { DrawCurve };

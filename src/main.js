@@ -8,7 +8,7 @@ async function main() {
   const world = new World(container);
   world.start()
   window.world = world;
-  await world.aniSparkEnterInit();
+  // await world.aniSparkEnterInit();
 }
 
 
