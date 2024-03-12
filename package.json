@@ -15,6 +15,7 @@
     "lodash-es": "^4.17.21",
     "three": "^0.160.1",
     "three-bas": "^3.0.0",
+    "three-halfedge-dcel": "^1.0.2",
     "vite-plugin-xml-loader": "^1.0.2"
   },
   "devDependencies": {

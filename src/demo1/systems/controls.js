@@ -9,11 +9,11 @@ function createControls(camera, canvas) {
   //   // 此时可以直接访问camera.position来获取当前的位置
   //   console.log(camera.position.x, camera.position.y, camera.position.z);
   // });
-  controls.mouseButtons = {
-    // LEFT: THREE.MOUSE.PAN,
-    MIDDLE: THREE.MOUSE.DOLLY,
-    RIGHT: THREE.MOUSE.ROTATE
-  }
+  // controls.mouseButtons = {
+  //   // LEFT: THREE.MOUSE.PAN,
+  //   MIDDLE: THREE.MOUSE.DOLLY,
+  //   RIGHT: THREE.MOUSE.ROTATE
+  // }
 
   return controls;
 }

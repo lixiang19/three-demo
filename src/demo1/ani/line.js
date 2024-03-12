@@ -3,14 +3,14 @@ import * as THREE from 'three';
 import LightningStrike from '../lib/LightningStrike.js'
 import {createXRayMaterial} from './xRayMaterial.js'
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import BrainModel from '../assets/model/brain5000.glb?url';
+import BrainModel from '../assets/model/brainAll.glb?url';
 import dotTexture from '../assets/textures/dotTexture.png?url';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
 import { MeshLine, MeshLineGeometry, MeshLineMaterial } from '@lume/three-meshline'
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import polyVe from '../data/polyVeLess.json'
+import { Dcel } from 'three-halfedge-dcel';
 import { randomBetween, pickOne, getRandomElementsFromArray } from '../utils.js';
 const pixelRatio = 2
 const group = new THREE.Group();
@@ -20,25 +20,23 @@ const indexWaveMap = {}
 let lightningStrikeList = []
 const allLineList = []
 let shaderMaterial = null
-// const polyVePoints = polyVe.map(p => new THREE.Vector3(p[0], p[2], -p[1]))
-// 函数：生成两数之间的随机数，可以为负数
 
-// 将polyVePoints剔除 30% .filter((p, i) => i % 2 === 0)
-// let polyVePoints = polyVe.map(p => new THREE.Vector3(p[0], p[2], -p[1]))
-// polyVePoints = getRandomElementsFromArray(polyVePoints, 0.4)
-// console.log(polyVePoints)
-let polyVePoints = polyVe.map(p => new THREE.Vector3(p.x, p.y, p.z))
-polyVePoints = getRandomElementsFromArray(polyVePoints, 0.5)
+let dcel
 function setupModel(loadedData) {
   const model = loadedData.scene.children[0];
-  let meshModel = null
+  let meshModel = null;
+
   model.traverse((object) => {
     if (object.isMesh) {
+      const geometry = object.geometry;
+
+      dcel = new Dcel(geometry);
       meshModel = object;
     }
   });
   return meshModel;
 }
+
 async function createBrain() {
   const loader = new GLTFLoader();
   const loadedData = await loader.loadAsync(BrainModel);
@@ -48,13 +46,61 @@ async function createBrain() {
 async function createLineAni() {
   const { model, brainData } = await createBrain();
   createModel(model);
-  createLineBg()
-  group.position.set(0, -100, 0);
+  // createLineBg()
+  testDcel()
   return group;
 }
 
+function testDcel() {
+  console.log("🚀 ~ testDcel ~ dcel", dcel)
+  const  polyVePoints = dcel.vertices
 
+  const startIndex =1
+  createPoint(polyVePoints[startIndex].point, 0xff0000)
+  const face = dcel.faces[startIndex]
+  const edge = face.edge
+  // createTriangle(edge) 
+  let startPoint = edge.vertex.point
+  let nextPoint = edge.next.vertex.point
+  let prePoint = edge.prev.vertex.point
 
+  dcel.forAdjacentFaces(startIndex,(adjacentFaceIndex)=>{
+
+    const face = dcel.faces[adjacentFaceIndex]
+    console.log("🚀 ~ testDcel ~ adjacentFaceIndex", adjacentFaceIndex,face.edge.vertex.point)
+    createPoint(face.edge.vertex.point, 0xffff00)
+    createTriangle(face.edge, 0x00ff00)
+  }) 
+}
+function createPoint(point, color = 0xffff00) {
+ 
+  const geometry = new THREE.SphereGeometry(0.05, 32, 32);
+  const material = new THREE.MeshBasicMaterial({ color: color  });
+  const sphere = new THREE.Mesh(geometry, material);
+  sphere.position.set(point.x, point.y, point.z);
+  group.add(sphere);
+}
+// 获取一个随机颜色
+function getRandomColor() {
+  return Math.random() * 0xffffff;
+}
+function createTriangle(edge, color = 0xff0000) {
+  const startPoint = edge.vertex.point
+
+  const nextPoint = edge.next.vertex.point
+  const otherPoint = edge.prev.vertex.point
+  // 画个三角形
+  const vertices = new Float32Array([
+    startPoint.x, startPoint.y, startPoint.z,
+    nextPoint.x, nextPoint.y, nextPoint.z,
+    otherPoint.x, otherPoint.y, otherPoint.z,
+  ]);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  const material = new THREE.MeshBasicMaterial({ color:color });
+  const mesh = new THREE.Mesh(geometry, material);
+  group.add(mesh);
+}
 // 创建模型
 function createModel(model) {
   // 创建自定义的着色器材质
@@ -70,125 +116,26 @@ function createModel(model) {
 
 // 测试线条
 function createLineBg() {
-  const minRange = 20;
-  const nearList = []
-  const maxRange =30;
-
-  polyVePoints.forEach((point, index) => {
-    pointLineMap[index] = []
-    // 遍历剩余的点
-    for (let i = index + 1; i < polyVePoints.length; i++) {
-      if (i === index) {
-        continue
-      }
-      const otherPoint = polyVePoints[i];
-      // 计算距离
-      const distance = point.distanceTo(otherPoint);
-      // const distance = 1
-      // 如果距离在特定范围内，则创建线段
-      if (distance >= minRange && distance <= maxRange) {
-        if (!edgesMap[`${index}-${i}`]) {
-          pointLineMap[index].push(i)
-          edgesMap[`${index}-${i}`] = true
-          edgesMap[`${i}-${index}`] = true
-        }
-
-      }
+  const list = polyVePoints.slice(0,100)
+  
+  list.forEach((point, index) => {
+ 
+    const otherIndex = (index + 1) % polyVePoints.length
+    const startPoint = list[index]
+    const endPoint = list[otherIndex]
+    if (startPoint&&endPoint) {
+      createOneLine(startPoint, endPoint)
     }
-    pointLineMap[index].forEach((otherIndex) => {
-      createOneLine(index, otherIndex)
-    })
-  });
-
-}
-function createOneLine(index, otherIndex) {
-  const point = polyVePoints[index]
-  const otherPoint = polyVePoints[otherIndex]
-  if (!indexWaveMap[index]) {
-    indexWaveMap[index] = randomArray(
-      [new THREE.Vector3(1.0, 0.0, 0.0),
-      new THREE.Vector3(0.0, 1.0, 0.0),
-      new THREE.Vector3(0.0, 0.0, 1.0),
-      new THREE.Vector3(0.0, 0.0, 0.0),
-      ]
-    )
-  }
-  if (!indexWaveMap[otherIndex]) {
-    indexWaveMap[otherIndex] = randomArray(
-      [new THREE.Vector3(1.0, 0.0, 0.0),
-      new THREE.Vector3(0.0, 1.0, 0.0),
-      new THREE.Vector3(0.0, 0.0, 1.0),
-      new THREE.Vector3(0.0, 0.0, 0.0),
-      ]
-    )
-  }
-
-  const startWaveDir = indexWaveMap[index]
-  const endWaveDir = indexWaveMap[otherIndex]
-  let matLine = new LineMaterial({
-    transparent: true,
-    color: 0x6ea0ff,
-    linewidth: 0.002, // in pixels
-    opacity: 0.05,
-    alphaToCoverage: true,
-    onBeforeCompile: shader => {
-      shader.uniforms.time = { value: 0 };
-      shader.uniforms.isShow = { value: true };
-      shader.uniforms.startWaveDir = { value: startWaveDir };
-      shader.uniforms.endWaveDir = { value: endWaveDir };
-      shader.fragmentShader = `
-        uniform bool isShow;
-      ${shader.fragmentShader}
-      `
-        .replace(
-          `gl_FragColor = vec4( diffuseColor.rgb, alpha );`,
-          `
-          if (isShow) {
-            gl_FragColor = vec4( diffuseColor.rgb, alpha );
-          } else {
-            discard;
-          }
-          `
-        )
-      shader.vertexShader = `
-        uniform float time;
-        uniform vec3 startWaveDir;
-        uniform vec3 endWaveDir;
-        
-        ${shader.vertexShader}
-      `.replace(
-        `	vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );`,
-        ` vec4 end = modelViewMatrix * vec4(instanceEnd, 1.0);
-
-        // Apply wave effect
-        if (startWaveDir.x > 0.5) {
-            start.x -= sin(time) * 4.0 ;
-        }
-        if (endWaveDir.x > 0.5) {
-          end.x -= sin(time) * 4.0 ;
-        }
-       
-        if (startWaveDir.y > 0.5) {
-         start.y += sin(start.y* 1.0 + time) * 4.0;
-        } 
-        if (endWaveDir.y > 0.5) {
-          end.y += sin(end.y* 1.0 +time) * 4.0;
-         } 
    
-         if (startWaveDir.z > 0.5) {
-          start.z += sin(start.z * 1.0 + time) * 4.0;
-       
-         } 
-          if (endWaveDir.z > 0.5) {
-            end.z += sin(end.z * 1.0 + time) * 4.0;
-          }
+  })
+}
+function createOneLine(point, otherPoint, color) {
 
-
-        `
-      );
-    }
-
-
+  let matLine = new LineMaterial({
+    color: color||0xffffff,
+    linewidth: 0.001, // in pixels
+    opacity: 1,
+    alphaToCoverage: true,
   });
   let geometry = new LineGeometry();
   geometry.setPositions([point.x, point.y, point.z, otherPoint.x, otherPoint.y, otherPoint.z]);
@@ -204,24 +151,7 @@ const updateInterval = 3; // 更新间隔（秒）
 let selectedIndices = new Set(); // 当前选中点的索引集合
 const lineIndexTime = {}
 function tick(delta, elapsedTime) {
-  group.rotation.y += 0.0002;
-  allLineList.forEach((line, index) => {
-    line.material.uniforms.time.value += delta;
-    if (index < 200) {
-      if (!lineIndexTime[index]) {
-        lineIndexTime[index] = {
-          timeMax: randomBetween(3, 6),
-          time: 0
-        }
-      }
-      lineIndexTime[index].time += delta
-      if (lineIndexTime[index].time > lineIndexTime[index].timeMax) {
-        line.material.uniforms.isShow.value = !line.material.uniforms.isShow.value
-        lineIndexTime[index].time = 0
-        lineIndexTime[index].timeMax = randomBetween(3, 6)
-      }
-    }
-  });
+  
 }
 
 // 写个函数从数组中随机出一个

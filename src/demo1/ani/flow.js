@@ -91,7 +91,7 @@ async function addLines() {
     const tube = createTube(curve);
     lines.push(tube)
     group.add(tube);
-    await sleep(1200)
+    await sleep(1700)
     pointMeshs[index+1].material =new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 3 });
   }
 
@@ -134,7 +134,7 @@ function createDots() {
 function tick(delta,time) {
   if (lines.length>0) {
     lines.forEach((tube) => {
-      tube.material.uniforms.progress.value += 0.005;
+      tube.material.uniforms.progress.value += 0.010;
   
     });
   }

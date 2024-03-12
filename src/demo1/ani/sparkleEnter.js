@@ -32,9 +32,9 @@ class Sparkle extends THREE.Vector3 {
     this.stop = false;
   }
   update() {
-    this.x += (this.dest.x - this.x) * 0.004;
-    this.y += (this.dest.y - this.y) * 0.004;
-    this.z += (this.dest.z - this.z) * 0.004;
+    this.x += (this.dest.x - this.x) * 0.008;
+    this.y += (this.dest.y - this.y) * 0.008;
+    this.z += (this.dest.z - this.z) * 0.008;
     if (this.size < this._size) {
       this.size += this.scaleSpeed;
     } else {
@@ -301,7 +301,7 @@ async function createSparkle(camera) {
       xRayMaterial.uniforms.p.value = 5.0;
       isStartRotate = true;
     },2500);
-  }, 4300);
+  }, 4800);
   return group;
 }
 let tempSparklesArray = [];

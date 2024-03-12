@@ -41,11 +41,14 @@ function aniCameraSparkle() {
 }
 function aniCameraLine() {
   gsap.to(camera.position, {
-    duration: 2,
-    x: 1.7,
-    y: 18,
-    z: 300,
-    ease: "power1.out",
+    duration: 0.1,
+    // x: 2,
+    // y: 27,
+    // z: -8,
+    x:0.04,
+y:5.3,
+z:-0.2,
+   
   });
   camera.updateProjectionMatrix();
 }
