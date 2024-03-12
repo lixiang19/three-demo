@@ -1,15 +1,15 @@
-import { createCamera,aniCameraLight,aniCameraSparkleEnter, aniCameraFlow, animateCamera, aniCameraLine, aniCameraSparkle } from './components/camera.js';
+import { createCamera, aniCameraLight, aniCameraSparkleEnter, aniCameraFlow, animateCamera, aniCameraLine, aniCameraSparkle } from './components/camera.js';
 import * as Three from 'three';
 import aniLight from './ani/light.js';
 import { createScene } from './components/scene.js';
-import { createBaseLight, createLineLight,createInnerPointLight, createSparkleEnterLights } from './components/lights.js';
+import { createBaseLight, createLineLight, createInnerPointLight, createSparkleEnterLights } from './components/lights.js';
 import { createRenderer } from './systems/renderer.js';
 import { Resizer } from './systems/Resizer.js';
 import { Loop } from './systems/Loop.js';
 import { createControls } from './systems/controls.js';
 import { editMain, editDestroy } from './edit/brainInit.js'
 import * as THREE from 'three';
-import { createComposer,aniFlowBloom,aniEditBloom, aniLightBloom,aniSparkEnterBloom, aniSparkBloom, aniLineBloom } from './systems/composerRender.js'
+import { createComposer, aniFlowBloom, aniEditBloom, aniLightBloom, aniSparkEnterBloom, aniSparkBloom, aniLineBloom } from './systems/composerRender.js'
 import aniSparkEnter from './ani/sparkleEnter.js'
 import sparkAnimation from './ani/sparkle.js'
 import sparkEnterAnimation from './ani/sparkleEnter.js'
@@ -42,12 +42,12 @@ class World {
     // const axesHelper = new THREE.AxesHelper(200);
     // scene.add(axesHelper);
   }
-  
+
   async editInit() {
     animateCamera()
     aniEditBloom()
     aniGroup = await editMain(camera, controls, loop)
- 
+
 
     scene.add(aniGroup);
   }
@@ -82,8 +82,8 @@ class World {
     scene.add(aniGroup);
     // 加个 圆柱体
 
-    
- 
+
+
 
 
     loop.updatables.push(aniSparkEnter);
@@ -100,9 +100,9 @@ class World {
   // 线条动画
   async aniLineInit() {
     // scene.background = new THREE.Color("#494f5c");
-    aniGroup = await lineAnimation.createLineAni()
+    aniGroup = await lineAnimation.createLineAni(camera)
     scene.add(aniGroup);
- 
+
     aniCameraLine()
     aniLineBloom()
     await sleep(2000)
@@ -113,7 +113,7 @@ class World {
     renderer.render(scene, camera);
   }
   start() {
-    loop&&loop.start();
+    loop && loop.start();
   }
   // 清除其他的动画
   async clearAni() {
