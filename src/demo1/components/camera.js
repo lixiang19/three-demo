@@ -45,19 +45,20 @@ function aniCameraLine() {
     // x: 2,
     // y: 27,
     // z: -8,
-    x: 6,
-    y: 11,
-    z: -2,
-
+    x: -1,
+    y: 21,
+    z: -11,
   });
+  // 镜头向y轴正向平移
+
   camera.updateProjectionMatrix();
 }
 function aniCameraLight() {
   gsap.to(camera.position, {
     duration: 2,
-    x: 1.7,
-    y: 18,
-    z: 400,
+    x: 1,
+    y: 28,
+    z: -1.3,
     ease: "power1.out",
   });
   camera.updateProjectionMatrix();

@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import BrainModel from '../assets/model/brain3.glb?url';
 
-import  { createXRayMaterial} from './xRayMaterial.js'
+import { createXRayMaterial } from './xRayMaterial.js'
 import pointData from '../data/pointData.json'
 import linesData from '../data/linesData.json'
 const group = new THREE.Group();
-let lines =[]
+let lines = []
 let pointMeshs = []
 function createTube(curve) {
   // shaderMaterial
@@ -92,7 +92,7 @@ async function addLines() {
     lines.push(tube)
     group.add(tube);
     await sleep(1700)
-    pointMeshs[index+1].material =new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 3 });
+    pointMeshs[index + 1].material = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 3 });
   }
 
 }
@@ -114,16 +114,16 @@ async function createFlow() {
   createModel(model);
   createDots();
 
-  setTimeout(()=>{
+  setTimeout(() => {
     addLines()
-  },2500)
+  }, 2500)
   return group;
 }
 function createDots() {
   const points = pointData.forEach((point, index) => {
     const geometry = new THREE.SphereGeometry(0.2, 32, 32);
     // const material = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 });
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff,opacity: 0.5,transparent: true});
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.5, transparent: true });
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(point);
     pointMeshs.push(sphere)
@@ -131,13 +131,13 @@ function createDots() {
   }
   )
 }
-function tick(delta,time) {
-  if (lines.length>0) {
+function tick(delta, time) {
+  if (lines.length > 0) {
     lines.forEach((tube) => {
       tube.material.uniforms.progress.value += 0.010;
-  
+
     });
   }
- 
+
 }
-export  default { createFlow ,tick}
+export default { createFlow, tick }

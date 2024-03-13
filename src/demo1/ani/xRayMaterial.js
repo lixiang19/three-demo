@@ -8,11 +8,11 @@ function createXRayMaterial() {
       glowColor: { value: new THREE.Color(0x3d71ca) },
       viewVector: { value: new THREE.Vector3(0, 0, 0) },
       c: { value: 1.0 },
-      p: { value: 4.0 },
+      p: { value: 6.0 },
       offsetY: { value: 0.0 },
       teColor: { value: new THREE.Color(0x000000) }
     },
-  
+
     vertexShader: vertex,
     fragmentShader: fragment,
     transparent: true,

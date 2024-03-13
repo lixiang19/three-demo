@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import LightningStrike from '../lib/LightningStrike.js'
-import {createXRayMaterial} from './xRayMaterial.js'
+import { createXRayMaterial } from './xRayMaterial.js'
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import BrainModel from '../assets/model/brain5000.glb?url';
 import dotTexture from '../assets/textures/dotTexture.png?url';
@@ -60,7 +60,7 @@ function createModel(model) {
   // 创建自定义的着色器材质
 
 
-  let mesh = new THREE.Mesh(model.geometry,  createXRayMaterial());
+  let mesh = new THREE.Mesh(model.geometry, createXRayMaterial());
   // mesh.scale.set(0.9, 0.9, 0.9);
   // mesh.position.set(0, 15, 0);
   group.add(mesh);
@@ -72,7 +72,7 @@ function createModel(model) {
 function createLineBg() {
   const minRange = 20;
   const nearList = []
-  const maxRange =30;
+  const maxRange = 30;
 
   polyVePoints.forEach((point, index) => {
     pointLineMap[index] = []

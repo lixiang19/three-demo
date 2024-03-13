@@ -16,6 +16,7 @@
     "three": "^0.160.1",
     "three-bas": "^3.0.0",
     "three-halfedge-dcel": "^1.0.2",
+    "three-mesh-bvh": "^0.7.3",
     "vite-plugin-xml-loader": "^1.0.2"
   },
   "devDependencies": {

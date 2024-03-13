@@ -15,7 +15,7 @@ import sparkAnimation from './ani/sparkle.js'
 import sparkEnterAnimation from './ani/sparkleEnter.js'
 import lineAnimation from './ani/line.js'
 import flowAni from './ani/flow.js'
-
+import lineAnimation2 from './ani/line2.js'
 let loop;
 let camera;
 let renderer;
@@ -98,6 +98,16 @@ class World {
     loop.updatables.push(aniLight);
   }
   // 线条动画
+  async aniLine2Init() {
+    // scene.background = new THREE.Color("#494f5c");
+    aniGroup = await lineAnimation2.createLineAni(camera)
+    scene.add(aniGroup);
+
+    aniCameraLine()
+    aniLineBloom()
+    await sleep(2000)
+    loop.updatables.push(lineAnimation2);
+  }
   async aniLineInit() {
     // scene.background = new THREE.Color("#494f5c");
     aniGroup = await lineAnimation.createLineAni(camera)
@@ -108,7 +118,6 @@ class World {
     await sleep(2000)
     loop.updatables.push(lineAnimation);
   }
-
   render() {
     renderer.render(scene, camera);
   }
