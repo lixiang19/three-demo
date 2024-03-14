@@ -4,7 +4,7 @@ import LightningStrike from '../lib/LightningStrike.js'
 import { createXRayMaterial } from './xRayMaterial.js'
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import BrainModel from '../assets/model/brainNew.glb?url';
-import { random, shuffle } from 'lodash-es'
+import { filter, random, shuffle } from 'lodash-es'
 
 import dotTexture from '../assets/textures/dotTexture.png?url';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
@@ -77,7 +77,7 @@ function createTube(curve) {
   `;
   const uniforms = {
     time: { value: 0 },
-    progress: { value: 1.0 }, // 初始化progress值为0
+    progress: { value: 0.0 }, // 初始化progress值为0
     color: { value: new THREE.Color("rgb(205, 127, 50)") },
     emissive: { value: new THREE.Color("rgb(248, 226, 158)") },// 159, 213, 255
 
@@ -141,8 +141,11 @@ async function createLineAni(ca) {
   const { model, brainData } = await createBrain();
   setDot()
   createModel(model);
-  createTrees(data1)
+
   createPoint(new THREE.Vector3(0, 0, 0), 0xff0000)
+  setTimeout(() => {
+    createTrees(data1)
+  }, 1000)
   return group;
 }
 function createTrees(data1) {
@@ -185,6 +188,9 @@ function getTreeLevel(tree, level) {
 
   return result
 }
+function filterRayPoints(rayPoints) {
+  return rayPoints.filter(p => p.distanceTo(new THREE.Vector3(0, 0, 0)) > 2)
+}
 function createTree(originData, count) {
   const tree = [
     {
@@ -208,7 +214,7 @@ function createTree(originData, count) {
       const startNormal = treeItem.lineData.normal
       const rayPoints = calcRayPoints(startPoint, endPoint, startNormal)
       treeItem.rayPoints = rayPoints
-      treeItem.points = [startPoint].concat(rayPoints.map(p => p.point)).concat([endPoint])
+      treeItem.points = filterRayPoints([startPoint].concat(rayPoints.map(p => p.point)).concat([endPoint]))
       const newNormal = rayPoints[rayPoints.length - 1].normal
       let degList = shuffle([-30, 5, -20, 30, 20]).slice(0, 2)
       if (index === 0) {
@@ -221,7 +227,7 @@ function createTree(originData, count) {
         const secondTreeItem = {
           level: index + 1,
           rayPoints: secondRayPoints,
-          points: [secondStartPoint].concat(secondRayPoints.map(p => p.point)).concat([secondEndPoint]),
+          points: filterRayPoints([secondStartPoint].concat(secondRayPoints.map(p => p.point)).concat([secondEndPoint])),
           lineData: {
             startPoint: secondStartPoint,
             endPoint: secondEndPoint,
@@ -236,14 +242,17 @@ function createTree(originData, count) {
   // 渲染
   renderTree(tree)
 }
+
 async function renderTree(tree) {
+  const children = []
   for (const treeItem of tree) {
-    // await sleep(3000); // 确保等待1秒
     renderTube(treeItem.points); // 渲染当前项目
     if (treeItem.children.length > 0) {
-      await renderTree(treeItem.children); // 递归渲染子项目
+      children.push(...treeItem.children)
     }
   }
+  await sleep(1000); // 确保等待1秒
+  await renderTree(children); // 递归渲染子项目
 }
 function renderNormal(point, normal) {
   const endPoint = new THREE.Vector3().addVectors(point, normal.normalize().multiplyScalar(5));
@@ -319,6 +328,9 @@ function getRayP(rayOrigin, rayDirection) {
   const intersects = raycaster.intersectObject(meshModel); // 假设mesh是你的模型对象
 
   if (intersects.length > 0) {
+    // if (isOdd(intersects.length)) {
+    //   return false
+    // }
     const p = intersects[0]
     return p
   } else {
@@ -480,18 +492,17 @@ const updateInterval = 3; // 更新间隔（秒）
 let selectedIndices = new Set(); // 当前选中点的索引集合
 const lineIndexTime = {}
 function tick(delta, elapsedTime) {
+  if (lines.length > 0) {
+    lines.forEach((tube) => {
+      tube.material.uniforms.progress.value += 0.005;
+      // tube.material.uniforms.time += 0.1
+      // if (tube.material.uniforms.progress.value > 1.5) {
+      //   tube.material.uniforms.progress.value = 0
+      // }
+      // tube.material.uniforms.time.value += 0.1
 
-  // if (lines.length > 0) {
-  //   lines.forEach((tube) => {
-  //     tube.material.uniforms.progress.value += 0.010;
-  //     // tube.material.uniforms.time += 0.1
-  //     if (tube.material.uniforms.progress.value > 1.5) {
-  //       tube.material.uniforms.progress.value = 0
-  //     }
-  //     // tube.material.uniforms.time.value += 0.1
-
-  //   });
-  // }
+    });
+  }
 }
 
 // 写个函数从数组中随机出一个
