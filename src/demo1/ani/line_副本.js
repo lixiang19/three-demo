@@ -120,80 +120,67 @@ async function createBrain() {
   const model = setupModel(loadedData);
   return { model, brainData: loadedData };
 }
-const data1 = {
-  point: {
-    "x": -7.993107463081934,
-    "y": 1.5482057900914548,
-    "z": 0.0019183781257332555
+const data1 = [
+  {
+    "x": -6.546821228351655,
+    "y": 3.256387432677812,
+    "z": 2.0525066185539753
   },
-  endPoint: {
-    "x": -6.139877488880918,
-    "y": 4.650270274567724,
-    "z": 0.9985661733127174
-  },
-  normal: {
-    "x": -0.8904099856370942,
-    "y": 0.4535326493055783,
-    "z": -0.020816717564576866
+  {
+    "x": -0.5749274382215283,
+    "y": 0.7611258917379635,
+    "z": 0.2558726313327545
   }
-}
+]
 async function createLineAni(ca) {
   camera = ca
   const { model, brainData } = await createBrain();
   setDot()
   createModel(model);
-  drawLines(toVector3(data1.point), toVector3(data1.normal), toVector3(data1.endPoint))
-  calcExtendLine(toVector3(data1.point), toVector3(data1.endPoint), toVector3(data1.normal))
   return group;
 }
-function drawLines(startPoint, startNormal, endPoint) {
+function drawLines(startPoint, endPoint, startNormal) {
 
-  startNormal.normalize();
-  const endNormalPoint = new THREE.Vector3().addVectors(startPoint, startNormal.multiplyScalar(3));
-  createOneLine(startPoint, endNormalPoint, 0xff00ff)
-  createOneLine(startPoint, endPoint, 0x00ff00)
-  calcAndRenderCurve(startPoint, endPoint, startNormal)
 }
-function calcExtendLine(startPoint, endPoint, startNormal) {
-  // 测试代码，
-  // 先计算startPoint和endPoint连线的延长线，
-  const LENGTH = 5
-  const direction = new THREE.Vector3().subVectors(endPoint, startPoint).normalize();
-  const newEndPoint = new THREE.Vector3().addVectors(endPoint, direction.multiplyScalar(LENGTH));
-  createPoint(newEndPoint, 0xff0000)
-  createOneLine(endPoint, newEndPoint, 0x00ffff)
-  createOneLine(newEndPoint, new THREE.Vector3(0, 0, 0), 0xffffff)
-  const o = new THREE.Vector3(0, 0, 0)
-  const newDirection = new THREE.Vector3().subVectors(o, newEndPoint).normalize();
-  const secondEndPoint = getRayPoint(newEndPoint, newDirection)
+function extendLine(startPoint, endPoint, startNormal) {
+  // 尝试用z轴的方向来扩展
+  for (let index = 0; index < 10; index++) {
+    // 终点z点 + 10
+    // const newStartPoint = new THREE.Vector3().addVectors(startPoint, new THREE.Vector3(random(-2, 2, true), random(-2, 2, true), random(-2, 2, true)));
+    const newEndPoint = new THREE.Vector3().addVectors(endPoint, new THREE.Vector3(0, random(-20, 20, true), 0));
 
-  const secondStartPoint = endPoint
-  createPoint(secondEndPoint, 0xff0000)
-  createOneLine(secondStartPoint, secondEndPoint, 0x3c00ff)
+    calcAndRenderCurve(startPoint, newEndPoint, startNormal)
+  }
+  for (let index = 0; index < 10; index++) {
+    // 终点z点 + 10
+    // const newStartPoint = new THREE.Vector3().addVectors(startPoint, new THREE.Vector3(random(-2, 2, true), random(-2, 2, true), random(-2, 2, true)));
+    const newEndPoint = new THREE.Vector3().addVectors(endPoint, new THREE.Vector3(0, 0, random(-20, 20, true)));
+
+    calcAndRenderCurve(startPoint, newEndPoint, startNormal)
+  }
+
+
 }
-
 function calcAndRenderCurve(startPoint, endPoint, startNormal) {
   let originalDirection = new THREE.Vector3().subVectors(endPoint, startPoint).normalize();
   let directionVector = new THREE.Vector3().subVectors(endPoint, startPoint);
   let length = directionVector.length();
-  // if (length < 30) {
-  //   endPoint = new THREE.Vector3().addVectors(startPoint, originalDirection.multiplyScalar(30));
-  // }
+  if (length < 30) {
+    endPoint = new THREE.Vector3().addVectors(startPoint, originalDirection.multiplyScalar(30));
+  }
   // 先得到第一条直线的投影点
   // createOneLine(startPoint, endPoint, 0x00ff00)
   const firstRayPoints = calcRayPoints(startPoint, endPoint, startNormal)
 
-  renderTube(firstRayPoints)
-}
-function getRayPoint(rayOrigin, rayDirection) {
-  raycaster.set(rayOrigin, rayDirection);
-  const intersects = raycaster.intersectObject(meshModel); // 假设mesh是你的模型对象
-  if (intersects.length > 0) {
-    const p = intersects[0].point;
-    return p
-  } else {
-    return null
-  }
+  // 取最后一个当作新的起点
+  const newStartPoint = firstRayPoints[firstRayPoints.length - 1]
+  const newNormal = new THREE.Vector3().subVectors(newStartPoint, startNormal).normalize();
+  // createOneLine(newStartPoint, endPoint, 0xff0000)
+  // createOneLine(newStartPoint, newNormal, 0x111fff)
+
+  const secondRayPoints = calcRayPoints(newStartPoint, endPoint, newNormal)
+  const allPoints = firstRayPoints.concat(secondRayPoints)
+  renderTube(allPoints)
 }
 function calcRayPoints(startPoint, endPoint, vertexNormal) {
   const lineCurveDirection = new THREE.LineCurve3(startPoint, endPoint);
@@ -208,7 +195,6 @@ function calcRayPoints(startPoint, endPoint, vertexNormal) {
     raycaster.firstHitOnly = true;
     var intersects = raycaster.intersectObject(meshModel); // 假设mesh是你的模型对象
     if (intersects.length > 0) {
-      console.log("🚀 ~ calcRayPoints ~ intersects", intersects)
       const p = intersects[0].point;
       curvesPoints.push(p)
     }
@@ -279,7 +265,7 @@ function testDcel() {
 }
 function createPoint(point, color = 0xffff00) {
 
-  const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+  const geometry = new THREE.SphereGeometry(0.05, 32, 32);
   const material = new THREE.MeshBasicMaterial({ color: color });
   const sphere = new THREE.Mesh(geometry, material);
   sphere.position.set(point.x, point.y, point.z);
@@ -331,7 +317,7 @@ function createOneLine(point, otherPoint, color) {
     color: color || 0xffffff,
     linewidth: 0.002, // in pixels
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.01,
     alphaToCoverage: true,
   });
   let geometry = new LineGeometry();
