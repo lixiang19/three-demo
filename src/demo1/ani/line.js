@@ -4,7 +4,7 @@ import LightningStrike from '../lib/LightningStrike.js'
 import { createXRayMaterial } from './xRayMaterial.js'
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import BrainModel from '../assets/model/brainNew.glb?url';
-import { random } from 'lodash-es'
+import { random, shuffle } from 'lodash-es'
 
 import dotTexture from '../assets/textures/dotTexture.png?url';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
@@ -46,7 +46,7 @@ function renderTube(points) {
 
 }
 function createTube(curve) {
-  const tubeGeometry = new THREE.TubeGeometry(curve, 200, 0.005, 8, false);
+  const tubeGeometry = new THREE.TubeGeometry(curve, 200, 0.01, 8, false);
 
   const vertexShader = `
   varying vec2 vUv;
@@ -70,10 +70,9 @@ function createTube(curve) {
     uniform float progress; // 用于控制动画进度的uniform变量
     void main() {
       if (vUv.x > progress) discard; // 如果顶点的位置大于动画进度，则不显示该片元
-      if (vUv.x < 0.01) discard; //
-      // 直接将emissive颜色添加到color上，使其始终影响最终颜色，而与进度无关
-      vec3 finalColor = color + emissive;
-      gl_FragColor = vec4(finalColor, 1.0); // 设置片元的颜色和透明度
+      float stripe = step(0.5, fract(vUv.x * 2.0));
+      vec3 c = mix(color, emissive, stripe);
+      gl_FragColor = vec4(color, 1.0);
     }
   `;
   const uniforms = {
@@ -142,54 +141,185 @@ async function createLineAni(ca) {
   const { model, brainData } = await createBrain();
   setDot()
   createModel(model);
-  drawLines(toVector3(data1.point), toVector3(data1.normal), toVector3(data1.endPoint))
-  calcExtendLine(toVector3(data1.point), toVector3(data1.endPoint), toVector3(data1.normal))
+  createTrees(data1)
+  createPoint(new THREE.Vector3(0, 0, 0), 0xff0000)
   return group;
 }
-function drawLines(startPoint, startNormal, endPoint) {
-
-  startNormal.normalize();
-  const endNormalPoint = new THREE.Vector3().addVectors(startPoint, startNormal.multiplyScalar(3));
-  createOneLine(startPoint, endNormalPoint, 0xff00ff)
+function createTrees(data1) {
+  createTree(data1, 4)
+  const startPoint = toVector3(data1.point)
+  const endPoint = toVector3(data1.endPoint)
+  const normal = toVector3(data1.normal).normalize()
   createOneLine(startPoint, endPoint, 0x00ff00)
-  calcAndRenderCurve(startPoint, endPoint, startNormal)
+
+  // createPoint(endPoint, 0x00ff00)
+  // 0-360,每隔5度
+  for (let i = 10; i < 350; i += 30) {
+    const newEndPoint = calcRotateLine(startPoint, endPoint, normal, i)
+    createTree({
+      point: startPoint,
+      endPoint: newEndPoint,
+      normal
+    }, 4)
+  }
+  // const newEndPoint = calcRotateLine(startPoint, endPoint, normal, 30)
+  // createTree({
+  //   point: startPoint,
+  //   endPoint: newEndPoint,
+  //   normal
+  // }, 4)
 }
-function calcExtendLine(startPoint, endPoint, startNormal) {
-  // 测试代码，
-  // 先计算startPoint和endPoint连线的延长线，
-  const LENGTH = 5
-  const direction = new THREE.Vector3().subVectors(endPoint, startPoint).normalize();
-  const newEndPoint = new THREE.Vector3().addVectors(endPoint, direction.multiplyScalar(LENGTH));
-  createPoint(newEndPoint, 0xff0000)
-  createOneLine(endPoint, newEndPoint, 0x00ffff)
-  createOneLine(newEndPoint, new THREE.Vector3(0, 0, 0), 0xffffff)
+// 根据level取树对应层级的数组，tree的子节点在children中，tree本身是个数组
+function getTreeLevel(tree, level) {
+  const result = []
+  function findLevel(tree, level) {
+    tree.forEach(item => {
+      if (item.level === level) {
+        result.push(item)
+      } else {
+        findLevel(item.children, level)
+      }
+    })
+  }
+  findLevel(tree, level)
+
+  return result
+}
+function createTree(originData, count) {
+  const tree = [
+    {
+      level: 0,
+      rayPoints: [],
+      lineData: {
+        startPoint: toVector3(originData.point),
+        endPoint: toVector3(originData.endPoint),
+        normal: toVector3(originData.normal).normalize()
+      },
+      points: [],
+      children: []
+    }
+  ] // 先写成先收集在渲染
+  for (let index = 0; index < count; index++) {
+    const currentLevel = getTreeLevel(tree, index)
+
+    currentLevel.forEach(treeItem => {
+      const startPoint = treeItem.lineData.startPoint
+      const endPoint = treeItem.lineData.endPoint
+      const startNormal = treeItem.lineData.normal
+      const rayPoints = calcRayPoints(startPoint, endPoint, startNormal)
+      treeItem.rayPoints = rayPoints
+      treeItem.points = [startPoint].concat(rayPoints.map(p => p.point)).concat([endPoint])
+      const newNormal = rayPoints[rayPoints.length - 1].normal
+      let degList = shuffle([-30, 5, -20, 30, 20]).slice(0, 2)
+      if (index === 0) {
+        degList = [30, -30]
+      }
+      // const degList = [30, -30]
+      degList.forEach((angle) => {
+        const { secondStartPoint, secondEndPoint } = calcNextLine(startPoint, endPoint, newNormal, angle)
+        const secondRayPoints = calcRayPoints(secondStartPoint, secondEndPoint, newNormal)
+        const secondTreeItem = {
+          level: index + 1,
+          rayPoints: secondRayPoints,
+          points: [secondStartPoint].concat(secondRayPoints.map(p => p.point)).concat([secondEndPoint]),
+          lineData: {
+            startPoint: secondStartPoint,
+            endPoint: secondEndPoint,
+            normal: newNormal
+          },
+          children: []
+        }
+        treeItem.children.push(secondTreeItem)
+      })
+    })
+  }
+  // 渲染
+  renderTree(tree)
+}
+async function renderTree(tree) {
+  for (const treeItem of tree) {
+    // await sleep(3000); // 确保等待1秒
+    renderTube(treeItem.points); // 渲染当前项目
+    if (treeItem.children.length > 0) {
+      await renderTree(treeItem.children); // 递归渲染子项目
+    }
+  }
+}
+function renderNormal(point, normal) {
+  const endPoint = new THREE.Vector3().addVectors(point, normal.normalize().multiplyScalar(5));
+  createOneLine(point, endPoint, 0xff0000)
+
+}
+function calcRotateLine(startPoint, endPoint, startNormal, deg) {
+  const LENGTH = 3
+  let originalDirection = new THREE.Vector3().subVectors(endPoint, startPoint).normalize(); //旋转的其实是个方向向量
+  let rotationAxis = startNormal.normalize();
+  let quaternion = new THREE.Quaternion().setFromAxisAngle(rotationAxis, THREE.MathUtils.degToRad(deg));
+  let direction = originalDirection.clone().applyQuaternion(quaternion);
+  let newEndPoint = new THREE.Vector3().addVectors(startPoint, direction.multiplyScalar(LENGTH));
+
+  // renderNormal(startPoint, startNormal)
+
+  // createPoint(newEndPoint, 0xff0000)
+  // createOneLine(startPoint, newEndPoint, 0x00ffff)
+
+  // createOneLine(newEndPoint, new THREE.Vector3(0, 0, 0), 0xffffff)
   const o = new THREE.Vector3(0, 0, 0)
   const newDirection = new THREE.Vector3().subVectors(o, newEndPoint).normalize();
-  const secondEndPoint = getRayPoint(newEndPoint, newDirection)
+  const secondEndP = getRayP(newEndPoint, newDirection)
 
-  const secondStartPoint = endPoint
-  createPoint(secondEndPoint, 0xff0000)
-  createOneLine(secondStartPoint, secondEndPoint, 0x3c00ff)
+  // createPoint(secondEndP.point, 0xff00ff)
+  createOneLine(startPoint, secondEndP.point, 0x3c00ff)
+  return secondEndP.point
 }
+function checkInMesh(point) {
 
-function calcAndRenderCurve(startPoint, endPoint, startNormal) {
-  let originalDirection = new THREE.Vector3().subVectors(endPoint, startPoint).normalize();
-  let directionVector = new THREE.Vector3().subVectors(endPoint, startPoint);
-  let length = directionVector.length();
-  // if (length < 30) {
-  //   endPoint = new THREE.Vector3().addVectors(startPoint, originalDirection.multiplyScalar(30));
+}
+function calcNextLine(startPoint, endPoint, startNormal, deg) {
+  // renderNormal(startPoint, startNormal)
+  // 先计算startPoint和endPoint连线的延长线，
+  const LENGTH = 4
+  const direction = new THREE.Vector3().subVectors(endPoint, startPoint).normalize();
+  let newEndPoint = new THREE.Vector3().addVectors(endPoint, direction.multiplyScalar(LENGTH));
+  // createOneLine(endPoint, newEndPoint, 0x00ffff)
+  // newEndPoint需要绕着startNormal旋转30度
+  const angle = THREE.MathUtils.degToRad(deg); // 将角度转换为弧度
+  const rotationMatrix = new THREE.Matrix4();
+  rotationMatrix.makeRotationAxis(startNormal.normalize(), angle);
+  // 应用旋转矩阵到newEndPoint
+  newEndPoint.applyMatrix4(rotationMatrix);
+
+  const o = new THREE.Vector3(0, 0, 0)
+  let newDirection = new THREE.Vector3().subVectors(o, newEndPoint).normalize();
+  let secondEndP = getRayP(newEndPoint, newDirection)
+  // if (!secondEndP) {
+  //   // 证明起点rayOrigin在模型内部,延长一下newEndPoint的位置
+  //   newEndPoint = new THREE.Vector3().addVectors(newEndPoint, direction.multiplyScalar(2));
+  //   newDirection = new THREE.Vector3().subVectors(o, newEndPoint).normalize();
+  //   secondEndP = getRayP(newEndPoint, newDirection)
   // }
-  // 先得到第一条直线的投影点
-  // createOneLine(startPoint, endPoint, 0x00ff00)
-  const firstRayPoints = calcRayPoints(startPoint, endPoint, startNormal)
-
-  renderTube(firstRayPoints)
+  const secondStartPoint = endPoint
+  // createPoint(secondEndP.point, 0xff00ff)
+  // createOneLine(secondStartPoint, secondEndP.point, 0x3c00ff)
+  // createPoint(newEndPoint, 0xff0000)
+  // createOneLine(endPoint, newEndPoint, 0x00ffff)
+  // createOneLine(newEndPoint, new THREE.Vector3(0, 0, 0), 0xffffff)
+  return {
+    secondStartPoint,
+    secondEndPoint: secondEndP.point
+  }
 }
-function getRayPoint(rayOrigin, rayDirection) {
+// 判断奇数
+function isOdd(num) {
+  return num % 2
+}
+function getRayP(rayOrigin, rayDirection) {
   raycaster.set(rayOrigin, rayDirection);
+  // raycaster.firstHitOnly = false
   const intersects = raycaster.intersectObject(meshModel); // 假设mesh是你的模型对象
+
   if (intersects.length > 0) {
-    const p = intersects[0].point;
+    const p = intersects[0]
     return p
   } else {
     return null
@@ -197,9 +327,9 @@ function getRayPoint(rayOrigin, rayDirection) {
 }
 function calcRayPoints(startPoint, endPoint, vertexNormal) {
   const lineCurveDirection = new THREE.LineCurve3(startPoint, endPoint);
-  const numberOfPoints = 30;
+  const numberOfPoints = 30; // 取点的精度
   const pointsDirection = lineCurveDirection.getPoints(numberOfPoints);
-  const curvesPoints = []
+  const rayPoints = []
   pointsDirection.forEach((point, index) => {
     const rayPoint = point
     const rayOrigin = new THREE.Vector3().addVectors(rayPoint, vertexNormal.normalize().multiplyScalar(10));
@@ -208,12 +338,14 @@ function calcRayPoints(startPoint, endPoint, vertexNormal) {
     raycaster.firstHitOnly = true;
     var intersects = raycaster.intersectObject(meshModel); // 假设mesh是你的模型对象
     if (intersects.length > 0) {
-      console.log("🚀 ~ calcRayPoints ~ intersects", intersects)
-      const p = intersects[0].point;
-      curvesPoints.push(p)
+      // 这里排除距离00点太近的点
+      // if (intersects[0].point.distanceTo(new THREE.Vector3(0, 0, 0)) > 2) {
+      //   rayPoints.push(intersects[0])
+      // }
+      rayPoints.push(intersects[0])
     }
   })
-  return curvesPoints
+  return rayPoints
 }
 
 
@@ -371,4 +503,3 @@ const animation = {
   tick
 }
 export default animation;
-
