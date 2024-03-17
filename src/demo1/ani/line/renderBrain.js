@@ -7,8 +7,8 @@ export default function renderBrain(modelMap) {
   const bottomModel = modelMap.bottomModel;
   const xRayMaterial = createXRayMaterial();
   const surfaceMesh = new THREE.Mesh(surfaceModel.geometry, xRayMaterial);
-  // const innerMesh = new THREE.Mesh(innerModel.geometry, xRayMaterial);
-  // const bottomMesh = new THREE.Mesh(bottomModel.geometry, xRayMaterial);
+  const innerMesh = new THREE.Mesh(innerModel.geometry, xRayMaterial);
+  const bottomMesh = new THREE.Mesh(bottomModel.geometry, xRayMaterial);
   group.add(surfaceMesh);
   // group.add(innerMesh);
   // group.add(bottomMesh);

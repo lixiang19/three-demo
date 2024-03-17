@@ -25,21 +25,66 @@ import setupModel from './line/setupModel.js';
 import renderBrain from './line/renderBrain.js';
 import auxiliary from './line/Auxiliary.js';
 const group = new THREE.Group();
+let camera
 const lines = []
 const raycaster = new THREE.Raycaster();
 import renderTube from './line/tube.js';
+function setDot() {
+  window.addEventListener('mousedown', (event) => {
+    // 将鼠标位置转换为归一化设备坐标(NDC)
+    let mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(modelMap.innerModel, true);
+
+    if (intersects.length > 0) {
+      console.log("🚀 ~ setDot ~ intersects", intersects[0])
+      const point = intersects[0].point;
+    }
+
+  }, false);
+
+}
 let modelMap = {}
-async function createLineAni() {
+async function createLineAni(ca) {
+  camera = ca
   modelMap = await setupModel();
   const brainGroup = renderBrain(modelMap);
   group.add(brainGroup);
-
+  setDot()
   auxiliary.setGroup(group);
   auxiliary.createPoint(new THREE.Vector3(0.0), 0xff0000)
-  renderLine()
+  renderTopLine()
+  // renderInnerLine()
   return group;
 }
-function renderLine() {
+function renderInnerLine() {
+  const originalData = {
+    point: {
+      "x": 0.1288703150967558,
+      "y": -0.11639261224620095,
+      "z": 0.3516183582830761
+    },
+    endPoint: {
+      "x": 0.15693421509889594,
+      "y": 0.0766590104668281,
+      "z": 0.2783399813277559
+    },
+    normal: {
+      "x": -0.44249302704736854,
+      "y": -0.4494172824044304,
+      "z": 0.7665713592318606
+    }
+  }
+  auxiliary.createPoint(toVector3(originalData.point), 0xff0000)
+  auxiliary.createPoint(toVector3(originalData.endPoint), 0xff0000)
+  const calcRrayLine = new CalcRrayLine(originalData, raycaster, modelMap.innerModel);
+  const tree = calcRrayLine.createTree(1);
+  const tubeList = getTubeList(tree);
+  renderTubes(tubeList);
+}
+function renderTopLine() {
   const originalData = {
     point: {
       "x": 0.07875881616881569,
@@ -79,7 +124,7 @@ function renderLine() {
       const tree = calcRrayLine.createTree(forkCount);
       const tubeList = getTubeList(tree);
       renderTubes(tubeList);
-      // renderTree2(tree) //原始点
+
     })
   })
 }

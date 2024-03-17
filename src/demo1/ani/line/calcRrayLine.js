@@ -106,7 +106,7 @@ class CalcRrayLine {
     return rayPoints.map(p => p.point)
   }
   calcChild(startPoint, endPoint, rotateNormal, level) {
-    let degRange = [-20, 20] // CONFIG: 旋转角度范围
+    let degRange = [-30, 30] // CONFIG: 旋转角度范围
     let lengthRange = [0.1, 0.5] //CONFIG: 旋转长度范围
     const nextLine = new NextLine({
       startPoint,

@@ -15,12 +15,12 @@ class CalcRotateLine {
   }
   createLineArea() {
 
-    // const bottomDegList = [60, 80, 90, 100, 110]
-    const leftDegList = [280, 300, 310, 320, 340, 350, 1, 10, 20, 30]
-    // const rightDegList = [150, 160, 170, 180]
-    const bottomDegList = []
+    const bottomDegList = [60, 80, 100, 110]
+    const leftDegList = [280, 300, 320, 340, 1, 20, 30]
+    const rightDegList = [150, 160, 170, 180]
+    // const bottomDegList = []
     // const leftDegList = [280]
-    const rightDegList = []
+    // const rightDegList = []
     return [
       {
         area: 'bottom',

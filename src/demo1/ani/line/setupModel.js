@@ -19,8 +19,12 @@ async function setupModel() {
     // Brain_Part_02_Colour_Brain_Texture_0下面
     // Brain_Part_06_Colour_Brain_Texture_0001 外面
     // Brain_Part_04_Colour_Brain_Texture_0 里面
+    // if (object.isMesh) {
+    //   object.geometry.center() // 使模型居中
+    // }
+    // 把坐标向y轴负方向移动
     if (object.isMesh) {
-      object.geometry.center() // 使模型居中
+      object.geometry = object.geometry.translate(0, -0.7, 0);
     }
     if (object.isMesh && object.name === "Brain_Part_06_Colour_Brain_Texture_0001") {
       object.geometry.computeBoundsTree();
