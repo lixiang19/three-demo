@@ -26,47 +26,115 @@ class CalcRrayLine {
 
   }
   getChildCount(forkLevel) {
-    if (forkLevel <= 1) {
-      return random(1, 2)
+    if (forkLevel < 1) {
+      return 2
+    } else if (forkLevel === 5) {
+      return 1
     } else {
       return 1
     }
   }
-  createTree(count = 2) {
-    // 先随机分叉次数
+  createMainLine(step) {
     const tree = this.tree
     this.setupRayPoints(tree[0]) // 设置第一层的投影点
-    const forkCount = count || random(3, 5)
-    for (let index = 0; index < forkCount; index++) {
+    const STEP = step
+    for (let index = 0; index < STEP; index++) {
       const currentLevel = getTreeLevel(tree, index)
       currentLevel.forEach(treeItem => {
         const startPoint = treeItem.lineData.startPoint
         const endPoint = treeItem.lineData.endPoint
         const rotateNormal = treeItem.lineData.rotateNormal
-        // 分叉数量
-        const childCount = this.getChildCount(treeItem.level)
-        for (let i = 0; i < childCount; i++) {
-          // 这个代码纯属裹脚布,因为一开始分叉的思路出错了,先这样写看看效果,明天重构分叉算法
-          let isMain = false
-          if (index === 1 && i === 0) {
-            // 这个确定为主线
-            isMain = true
-          }
-          if (index >= 2 && i === 0 && treeItem.isMain) {
-            isMain = true
-          }
-          const secondTreeItem = this.calcChild(startPoint, endPoint, rotateNormal, index + 1, isMain)
-
-          if (secondTreeItem) {
-            const newRotateNormal = treeItem.rayPoints[treeItem.rayPoints.length - 1].normal
-            secondTreeItem.lineData.rotateNormal = newRotateNormal
-            this.setupRayPoints(secondTreeItem)
-            treeItem.children.push(secondTreeItem)
-          }
+        const secondTreeItem = this.calcChild(startPoint, endPoint, rotateNormal, index + 1, true) // 总有一个当主线
+        if (secondTreeItem) {
+          const newRotateNormal = treeItem.rayPoints[treeItem.rayPoints.length - 1].normal
+          secondTreeItem.lineData.rotateNormal = newRotateNormal
+          this.setupRayPoints(secondTreeItem)
+          treeItem.children.push(secondTreeItem)
         }
       })
     }
     return tree
+  }
+  treeToCurve(tree) {
+
+    const list = this.treeToList(tree)
+
+    const points = this.insertBezier(list[0])
+    console.log('points', points)
+    const curve = new THREE.CatmullRomCurve3(points);
+    console.log('curve', curve.points)
+    curve.points.forEach(p => {
+      auxiliary.createPoint(p, 0x00ff00)
+    })
+
+    return curve
+  }
+  connect(currentPath, points) {
+    // auxiliary.createPoint(points[0], 0x00ff00)
+    return currentPath.concat(points[0]);
+  }
+  treeToList(tree, path = [], list = []) {
+    for (const node of tree) {
+      const currentPath = this.connect(path, node.points);
+      if (node.children && node.children.length > 0) {
+        // 如果当前节点有子节点，递归遍历子节点
+        this.treeToList(node.children, currentPath, list);
+      } else {
+        // 如果当前节点没有子节点，将当前路径添加到列表中
+        list.push(currentPath);
+      }
+    }
+    return list;
+  }
+  insertBezier(list) {
+
+    var curvePoints = [list[0]];
+    for (var i = 0; i < list.length - 1; i++) {
+      var start = list[i];
+
+
+      var end = list[i + 1];
+
+      var control = this.getControlPoint(start, end);
+      // auxiliary.createPoint(control, 0x00ffff)
+
+
+      curvePoints.push(control);
+      curvePoints.push(end);
+
+    }
+
+    return curvePoints;
+  }
+  getControlPoint(v1, v2) {
+    const cpLength = v1.distanceTo(v2) / THREE.MathUtils.randFloat(2.0, 3.0);
+
+
+    var dirVec = new THREE.Vector3().copy(v2).sub(v1).normalize();
+    var northPole = new THREE.Vector3(0, 0, 1); // this is original axis where point get sampled
+    var axis = new THREE.Vector3().crossVectors(northPole, dirVec).normalize(); // get axis of rotation from original axis to dirVec
+    var axisTheta = dirVec.angleTo(northPole); // get angle
+    var rotMat = new THREE.Matrix4().makeRotationAxis(axis, axisTheta); // build rotation matrix
+
+    var minz = Math.cos(THREE.MathUtils.degToRad(45)); // cone spread in degrees
+    var z = THREE.MathUtils.randFloat(minz, 1);
+    var theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
+    var r = Math.sqrt(1 - z * z);
+    var cpPos = new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z);
+    cpPos.multiplyScalar(cpLength); // length of cpPoint
+    cpPos.applyMatrix4(rotMat); // rotate to dirVec
+    cpPos.add(v1); // translate to v1
+    return cpPos;
+  };
+  createTree(count = 2) {
+    const tree = this.createMainLine(count)
+    const curve = this.treeToCurve(tree)
+    return curve
+  }
+  // 生成分叉
+  createFork(curve) {
+    // 分叉的位置先写死
+    const points = curve.points
   }
   setupRayPoints(treeItem) {
     const startPoint = treeItem.lineData.startPoint
@@ -114,13 +182,12 @@ class CalcRrayLine {
     // return [startPoint].concat(rayPoints.map(p => p.point)).concat([endPoint])
     return rayPoints.map(p => p.point)
   }
-  calcChild(startPoint, endPoint, rotateNormal, level, isMain = false) {
-    let degRange = [-10, 10] // CONFIG: 旋转角度范围  这个不对,还是应该改成先算主线再分叉
-    if (isMain) {
-      degRange = [-1, 1]
+  calcChild(startPoint, endPoint, rotateNormal, level, isMainLine = false) {
+    let degRange = [-10, 10] // CONFIG: 旋转角度范围
+    if (isMainLine) {
+      degRange = [-5, 5]
     }
-
-    let lengthRange = [0.1, 0.5] //CONFIG: 旋转长度范围
+    let lengthRange = [0.1, 0.2] //CONFIG: 旋转长度范围
     const nextLine = new NextLine({
       startPoint,
       endPoint,
@@ -137,7 +204,6 @@ class CalcRrayLine {
         level: level,
         rayPoints: [],
         points: [],
-        isMain: isMain,
         lineData: {
           startPoint: nextLineData.nextStartPoint,
           endPoint: nextLineData.nextEndPoint,

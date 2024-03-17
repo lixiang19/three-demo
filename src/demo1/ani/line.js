@@ -108,13 +108,13 @@ function renderTopLine() {
   const areaLines = calcRotateLine.createLineArea();
   const areaFork = {
     bottom() {
-      return random(1, 2)
+      return random(2, 3)
     },
     left() {
-      return random(2, 4)
+      return random(4, 6)
     },
     right() {
-      return random(2, 4)
+      return random(4, 5)
     }
   }
   areaLines.forEach(areaLine => {
@@ -135,14 +135,14 @@ function renderTubes(tubeList) {
   });
 }
 function tick() {
-  // if (lines.length > 0) {
-  //   lines.forEach((tube) => {
-  //     tube.material.uniforms.progress.value += 0.001;
-  //     if (tube.material.uniforms.progress.value > 1.3) {
-  //       tube.material.uniforms.progress.value = 0;
-  //     }
-  //   });
-  // }
+  if (lines.length > 0) {
+    lines.forEach((tube) => {
+      tube.material.uniforms.progress.value += 0.001;
+      if (tube.material.uniforms.progress.value > 1.3) {
+        tube.material.uniforms.progress.value = 0;
+      }
+    });
+  }
 }
 const animation = {
   createLineAni,
