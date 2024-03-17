@@ -9,12 +9,25 @@ class Auxiliary {
   setGroup(group) {
     this.group = group;
   }
-  createPoint(point, color = 0xffff00) {
-    const geometry = new THREE.SphereGeometry(0.005, 32, 32);
+  createPoint(point, color = 0xffff00, size = 0.005) {
+    const geometry = new THREE.SphereGeometry(size, 32, 32);
     const material = new THREE.MeshBasicMaterial({ color: color });
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.set(point.x, point.y, point.z);
     this.group.add(sphere);
+  }
+  createCurve(points, color) {
+    const toYpoints = points.map(point => {
+      const newPoint = point.clone()
+      newPoint.y += 0.01
+      return newPoint
+    })
+    const curve = new THREE.CatmullRomCurve3(toYpoints);
+    const points2 = curve.getPoints(50);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points2);
+    const material = new THREE.LineBasicMaterial({ color: color || 0xff0000 });
+    const curveObject = new THREE.Line(geometry, material);
+    this.group.add(curveObject);
   }
   createLine(point, otherPoint, color) {
     let matLine = new LineMaterial({

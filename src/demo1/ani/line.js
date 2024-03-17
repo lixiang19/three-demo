@@ -12,16 +12,20 @@ import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { Dcel } from 'three-halfedge-dcel';
-import { randomBetween, pickOne, getRandomElementsFromArray } from '../utils.js';
+import { toVector3, last } from './line/util'
+import { mockList } from './line/MockData.js'
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { getTubeList } from './line/calcTubeList.js'
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
+import CalcRotateLine from './line/calcRotateLine.js';
 import CalcRrayLine from './line/calcRrayLine.js';
 import setupModel from './line/setupModel.js';
 import renderBrain from './line/renderBrain.js';
 import auxiliary from './line/Auxiliary.js';
 const group = new THREE.Group();
+const lines = []
 const raycaster = new THREE.Raycaster();
 import renderTube from './line/tube.js';
 let modelMap = {}
@@ -53,26 +57,51 @@ function renderLine() {
       "z": -0.800178626169686
     }
   }
-  const calcRrayLine = new CalcRrayLine(originalData, raycaster, modelMap.surfaceModel);
-  const tree = calcRrayLine.createTree(4);
-
-  renderTree(tree)
-}
-function renderTree(tree) {
-  for (const treeItem of tree) {
-
-    const tube = renderTube(treeItem.points); // 渲染当前项目
-    group.add(tube);
-    if (treeItem.children.length > 0) {
-      renderTree(treeItem.children); // 递归渲染子项目
+  // const calcRrayLine = new CalcRrayLine(originalData, raycaster, modelMap.surfaceModel);
+  // const tree = calcRrayLine.createTree(4);
+  const calcRotateLine = new CalcRotateLine(originalData, raycaster, modelMap.surfaceModel);
+  const areaLines = calcRotateLine.createLineArea();
+  const areaFork = {
+    bottom() {
+      return random(1, 2)
+    },
+    left() {
+      return random(2, 4)
+    },
+    right() {
+      return random(2, 4)
     }
   }
+  areaLines.forEach(areaLine => {
+    areaLine.lines.forEach((item, index) => {
+      const forkCount = areaFork[areaLine.area]()
+      const calcRrayLine = new CalcRrayLine(item, raycaster, modelMap.surfaceModel);
+      const tree = calcRrayLine.createTree(forkCount);
+      const tubeList = getTubeList(tree);
+      renderTubes(tubeList);
+      // renderTree2(tree) //原始点
+    })
+  })
+}
+function renderTubes(tubeList) {
+  tubeList.forEach((tube) => {
+    group.add(tube);
+    lines.push(tube);
+  });
 }
 function tick() {
-
+  // if (lines.length > 0) {
+  //   lines.forEach((tube) => {
+  //     tube.material.uniforms.progress.value += 0.001;
+  //     if (tube.material.uniforms.progress.value > 1.3) {
+  //       tube.material.uniforms.progress.value = 0;
+  //     }
+  //   });
+  // }
 }
 const animation = {
   createLineAni,
   tick
 }
 export default animation;
+

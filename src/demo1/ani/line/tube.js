@@ -1,5 +1,10 @@
 import * as THREE from "three";
-function renderTube(points) {
+import auxiliary from "./Auxiliary";
+function renderTube(points, color) {
+  // points.forEach(point => {
+  //   auxiliary.createPoint(point, 0xffffff);
+  // });
+
   const curve = new THREE.CatmullRomCurve3(points);
   const tubeGeometry = new THREE.TubeGeometry(curve, 200, 0.001, 8, false);
 
@@ -28,14 +33,14 @@ function renderTube(points) {
       // float stripe = step(0.5, fract(vUv.x * 2.0));
       // vec3 c = mix(color, emissive, stripe);
       // gl_FragColor = vec4(color, 1.0);
-      vec3 finalColor = color + emissive;
+      vec3 finalColor = color ;
       gl_FragColor = vec4(finalColor, 1.0); // 设置片元的颜色和透明度
     }
   `;
   const uniforms = {
     time: { value: 0 },
     progress: { value: 1.0 }, // 初始化progress值为0
-    color: { value: new THREE.Color("rgb(205, 127, 50)") },
+    color: { value: color },
     emissive: { value: new THREE.Color("rgb(248, 226, 158)") },// 159, 213, 255
 
   };

@@ -1,6 +1,7 @@
 import { toVector3, random, getTreeLevel } from './util'
 import * as THREE from 'three';
 import auxiliary from './Auxiliary'
+// 转轴多发生在下半部分因为上部分有个起点
 class CalcRrayLine {
   constructor(originalData, raycaster, meshModel) {
     this.originStartPoint = toVector3(originalData.point)
@@ -24,6 +25,14 @@ class CalcRrayLine {
     this.meshModel = meshModel
 
   }
+  getChildCount(forkLevel) {
+
+    if (forkLevel <= 1) {
+      return random(2, 3)
+    } else {
+      return 1
+    }
+  }
   createTree(count = 2) {
     // 先随机分叉次数
     const tree = this.tree
@@ -36,7 +45,7 @@ class CalcRrayLine {
         const endPoint = treeItem.lineData.endPoint
         const rotateNormal = treeItem.lineData.rotateNormal
         // 分叉数量
-        const childCount = random(2, 3)
+        const childCount = this.getChildCount(treeItem.level)
         for (let i = 0; i < childCount; i++) {
           const secondTreeItem = this.calcChild(startPoint, endPoint, rotateNormal, index + 1)
           if (secondTreeItem) {
@@ -78,10 +87,15 @@ class CalcRrayLine {
           const lastPoint = rayPoints[rayPoints.length - 1].point
           const distance = lastPoint.distanceTo(intersects[0].point)
           if (distance > 0.05) { // 这个距离上个投影不应该那么远
-            return
+            console.log('距离上个投影点太远')
+            return false
+          } else {
+            rayPoints.push(intersects[0])
           }
+        } else {
+          rayPoints.push(intersects[0])
         }
-        rayPoints.push(intersects[0])
+
       }
     })
     return rayPoints
@@ -92,8 +106,8 @@ class CalcRrayLine {
     return rayPoints.map(p => p.point)
   }
   calcChild(startPoint, endPoint, rotateNormal, level) {
-    let degRange = [-20, 20]
-    let lengthRange = [0.1, 0.5]
+    let degRange = [-20, 20] // CONFIG: 旋转角度范围
+    let lengthRange = [0.1, 0.5] //CONFIG: 旋转长度范围
     const nextLine = new NextLine({
       startPoint,
       endPoint,
@@ -143,7 +157,8 @@ class NextLine {
     const degRange = this.degRange
     const lengthRange = this.lengthRange
     while (!newEndPoint && count < MAX) {
-      const deg = random(degRange[0], degRange[1])
+      let deg = random(degRange[0], degRange[1])
+      // deg = deg <= 0 ? (deg - 10) : (deg + 10)
       const length = random(lengthRange[0], lengthRange[1])
       const rotationLine = this.calcRotationLine(deg, length)
       const checkRes = this.checkRayP(rotationLine.rayP, rotationLine.newEndPoint)
@@ -162,6 +177,12 @@ class NextLine {
     }
     if (newEndPoint) {
       const newNormal = new THREE.Vector3().subVectors(newEndPoint, newRayP.point).normalize()
+      // 辅助线
+      // const o = new THREE.Vector3(0, 0, 0)
+      // auxiliary.createPoint(newRayP.point, 0x00ff00)
+      // auxiliary.createLine(this.endPoint, newRayP.point, 0x00ffff)
+      // auxiliary.createLine(newRayP.point, o)
+      // auxiliary.createPoint(newRayP.point, 0xff00ff)
       return {
         nextStartPoint: this.endPoint,
         nextEndPoint: newRayP.point,
@@ -189,13 +210,7 @@ class NextLine {
     let newDirection = new THREE.Vector3().subVectors(o, newEndPoint).normalize(); // 0点指向newEndPoint的向量
     const rayP = this.getRayP(newEndPoint, newDirection)
 
-    // 辅助线
-    // auxiliary.createPoint(newEndPoint, 0x00ff00)
-    // auxiliary.createLine(startPoint, newEndPoint, 0x00ffff)
-    // auxiliary.createLine(newEndPoint, o)
-    // if (rayP) {
-    //   auxiliary.createPoint(rayP.point, 0xff00ff)
-    // }
+
 
     return {
       newEndPoint,
@@ -203,13 +218,14 @@ class NextLine {
     }
   }
   checkRayP(rayP, newEndPoint) {
-
     if (!rayP) {
       return false
     } else {
       // 检查rayPoint是否在newEndPoint的前面，太远意味着newEndPoint在模型内部，投影投到对面的面上了，不合适
+      const endPoint = this.endPoint
       const distance = rayP.point.distanceTo(newEndPoint)
-      if (distance > 0.6) { // 0.6看着写的
+      const distance2 = rayP.point.distanceTo(endPoint)
+      if (distance > 0.6 || distance2 > 0.6) { // 0.6看着写的
         return false
       } else {
         return true
